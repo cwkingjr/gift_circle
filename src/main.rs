@@ -28,143 +28,121 @@ impl Person {
     }
 }
 
-#[derive(Debug)]
-struct Participants {
-    available: Vec<Person>,
-    gift_path: Vec<Person>
+fn largest_group_info(persons: &Vec<Person>) -> GroupInfo {        
+    let group_counter = persons.iter().map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
+    GroupInfo::new(group_counter[0].0, group_counter[0].1)
 }
 
-impl Participants {
-    fn new() -> Self {
-        Participants {
-            available: vec![],
-            gift_path: vec![]
-        }
+fn largest_non_prev_group_info(persons: &Vec<Person>, previous_group: usize) -> GroupInfo {        
+    let group_counter = persons.iter().filter(|p| p.group != previous_group).map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
+    GroupInfo::new(group_counter[0].0, group_counter[0].1)
+}
+
+fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
+    (largest_group_info(persons).size * 2) <= persons.len() 
+}
+
+// Last person gives gift to first person so can't be in the same group.
+fn is_a_cycle(persons: &Vec<Person>) -> bool {
+    if persons.len() < 2 {
+        return false;
     }
 
-    fn add_participant(&mut self, person: Person) {
-        self.available.push(person);
-    }
+    let first_group = persons.first().unwrap().group;
+    let last_group = persons.last().unwrap().group;
 
-    fn largest_group_info(&self) -> GroupInfo {        
-        let group_counter = self.available.iter().map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
-        GroupInfo::new(group_counter[0].0, group_counter[0].1)
-    }
+    first_group != last_group
+}
 
-    fn largest_non_prev_group_info(&self, previous_group: usize) -> GroupInfo {        
-        let group_counter = self.available.iter().filter(|p| p.group != previous_group).map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
-        GroupInfo::new(group_counter[0].0, group_counter[0].1)
-    }
-
-    fn available_count(&self) -> usize {
-        self.available.len()
-    }
-    fn gift_path_count(&self) -> usize {
-        self.gift_path.len()
-    }
-
-    fn has_possible_hamiltonian_path(&self) -> bool {
-        (self.largest_group_info().size * 2) <= self.available_count() 
-    }
-
-    // Last person gives gift to first person so can't be in the same group.
-    fn is_gift_path_a_cycle(&self) -> bool {
-        if self.gift_path_count() < 2 {
+// Detemines that there are no adjoining entries with the same group
+fn is_head_group_diff_from_tail_group(persons: &Vec<Person>) -> bool {
+    let mut previous_group: usize = 0;
+    for person in persons.iter() {
+        if person.group == previous_group {
             return false;
         }
-
-        let first_group = self.gift_path.first().unwrap().group;
-        let last_group = self.gift_path.last().unwrap().group;
-
-        first_group != last_group
+        previous_group = person.group;
     }
-
-    // Detemines that there are no adjoining entries with the same group
-    fn is_gift_path_head_group_diff_from_tail_group(&self) -> bool {
-        let mut previous_group: usize = 0;
-        for person in self.gift_path.iter() {
-            if person.group == previous_group {
-                return false;
-            }
-            previous_group = person.group;
-        }
-        true
-    }
-
-    fn is_gift_path_valid(&self) -> bool {
-        self.is_gift_path_head_group_diff_from_tail_group() & self.is_gift_path_a_cycle()
-    }
-
-    fn move_person_from_available_to_path(&mut self, person: &Person) {
-        self.available.retain(|p| p != person);
-        self.gift_path.push(person.clone());
-    }
-
-    fn generate_random_gift_path(&mut self) {
-        // Go through the list of available participants and generate a gift path
-        // where noone gives a gift to anyone in their same group.
-
-        let mut previous_group: usize = 0;
-        
-        while self.available_count() > 0 {
-            // If the largest group is half (or more) than the total remaining, we have
-            // to pick someone from that group. Otherwise, pick randomly.
-
-            let largest_np_group_info = self.largest_non_prev_group_info(previous_group);
-            println!("Large group info: {:?}", largest_np_group_info);
-            println!("Previous group: {:?}", previous_group);
-            let available_clone = self.available.clone();
-
-            if (largest_np_group_info.size * 2) > self.available_count() {
-                // pick from largest, non-previous group
-                let candidates = available_clone.iter().filter(|&p| p.group == largest_np_group_info.group).collect::<Vec<_>>();
-                println!("Largest remaining group candidates: {:#?}", candidates);
-                let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-                println!("Largest remaining group choice: {:?}", choice);
-                self.move_person_from_available_to_path(*choice);
-                previous_group = choice.group;
-            } else {
-                // pick from random, non-previous group
-                let candidates = available_clone.iter().filter(|&p| p.group != previous_group).collect::<Vec<_>>();
-                println!("Random group candidates: {:#?}", candidates);
-                let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-                println!("Random group choice: {:?}", choice);
-                self.move_person_from_available_to_path(*choice);
-                previous_group = choice.group;
-            }
-        }
-    }
+    true
 }
 
+fn is_gift_path_valid(persons: &Vec<Person>) -> bool {
+    is_head_group_diff_from_tail_group(persons) && is_a_cycle(persons)
+}
+
+fn move_person(from_persons: &mut Vec<Person>, to_persons: &mut Vec<Person>, person: &Person) {
+    from_persons.retain(|p| p != person);
+    to_persons.push(person.clone());
+}
+
+fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
+    // Go through the list of available participants and generate a gift path
+    // where noone gives a gift to anyone in their same group.
+
+    // Preserve the original list of particiants in case we need it to start again when no path found.
+    let mut available_persons: Vec<Person> = from_persons.clone();
+
+    let mut persons_path:  Vec<Person> = vec!();
+
+    let mut previous_group: usize = 0;
+    
+    while available_persons.len() > 0 {
+        // If the largest group is half (or more) than the total remaining, we have
+        // to pick someone from that group. Otherwise, pick randomly.
+
+        let largest_np_group_info = largest_non_prev_group_info(&available_persons, previous_group);
+        println!("Large group info: {:?}", largest_np_group_info);
+        println!("Previous group: {:?}", previous_group);
+
+        if (largest_np_group_info.size * 2) > available_persons.len() {
+            // pick from largest, non-previous group 
+            let candidates = available_persons.iter().filter(|&p| p.group == largest_np_group_info.group).cloned().collect::<Vec<Person>>();
+            println!("Largest remaining group candidates: {:#?}", candidates);
+            let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
+            println!("Largest remaining group choice: {:?}", choice);
+            move_person(&mut available_persons, &mut persons_path, choice);
+            previous_group = choice.group;
+        } else {
+            // pick from random, non-previous group
+            let candidates = available_persons.iter().filter(|&p| p.group != previous_group).cloned().collect::<Vec<Person>>();
+            println!("Random group candidates: {:#?}", candidates);
+            let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
+            println!("Random group choice: {:?}", choice);
+            move_person(&mut available_persons, &mut persons_path, choice);
+            previous_group = choice.group;
+        }
+    }
+
+    persons_path
+}
+
+
 fn main() {
+    let mut mypath: Vec<Person> = vec!();
+
     let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
     let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
-    let person3= Person::new("Son 2".to_string(),"son@example.com".to_string(),1,"programming".to_string());
-    let person4= Person::new("Daughter 2".to_string(),"duaghter2@example.com".to_string(),1,"camping".to_string());
+    let person3= Person::new("Son 2".to_string(),"son@example.com".to_string(),2,"programming".to_string());
+    let person4= Person::new("Daughter 2".to_string(),"duaghter2@example.com".to_string(),2,"camping".to_string());
     let person5= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),3,"writing".to_string());
     let person6= Person::new("Son 2".to_string(),"son2@example.com".to_string(),3,"doctoring".to_string());
 
-    let mut participants = Participants::new();
-    participants.add_participant(person1);
-    participants.add_participant(person2);
-    participants.add_participant(person3);
-    participants.add_participant(person4);
-    participants.add_participant(person5);
-    participants.add_participant(person6);
+    let participants = vec!(person1, person2, person3, person4, person5, person6);
 
     //println!("Begining participants{:#?}", participants);
-    println!("Beginning largest group info: {:#?}", participants.largest_group_info());
-    println!("Beginning available count: {:#?}", participants.available_count());
+    println!("Beginning largest group info: {:#?}", largest_group_info(&participants));
+    println!("Beginning particiant count: {:#?}", participants.len());
 
-    println!("Possible Hamlitonian path: {:#?}", participants.has_possible_hamiltonian_path());
-    if participants.has_possible_hamiltonian_path() {
-        participants.generate_random_gift_path();
+    let possible_path = has_possible_hamiltonian_path(&participants);
+    println!("Possible Hamlitonian path: {:#?}", possible_path);
+    if possible_path {
+        mypath = generate_path(&participants);
 
-        println!("Is cycle: {:#?}", participants.is_gift_path_a_cycle());
-        println!("Is Gift Path valid: {:#?}", participants.is_gift_path_valid());
+        println!("Is cycle: {:#?}", is_a_cycle(&mypath));
+        println!("Is Gift Path valid: {:#?}", is_gift_path_valid(&mypath));
     }
 
-    println!("Gift Path count: {:#?}", participants.gift_path_count());
-    println!("Ending participants{:#?}", participants);
+    println!("Gift Path count: {:#?}", mypath.len());
+    println!("Ending participants{:#?}", mypath);
 
 }
