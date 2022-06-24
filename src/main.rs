@@ -12,10 +12,10 @@ fn main() {
     let person6= Person::new("Son 2".to_string(),"son2@example.com".to_string(),3,"doctoring".to_string());
 
     let participants = vec!(person1, person2, person3, person4, person5, person6);
+    println!("Submitted participants{:#?}", &participants);
 
     let mypath = get_gift_path(participants);
 
-    //println!("Gift Path count: {:#?}", mypath.len());
-    println!("Ending participants{:#?}", mypath);
-
+    println!("Gift Circle count: {:#?}", mypath.len());
+    println!("Gift Circle order: {:#?}", mypath);
 }

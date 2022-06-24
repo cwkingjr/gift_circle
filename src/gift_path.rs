@@ -45,7 +45,7 @@ fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
 // Last person gives gift to first person so can't be in the same group.
 fn is_a_cycle(persons: &Vec<Person>) -> bool {
     if persons.len() < 2 {
-        return false;
+        panic!("You must submit at least three people in order to form a gift circle.")
     }
 
     let first_group = persons.first().unwrap().group;
@@ -91,23 +91,23 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         // to pick someone from that group. Otherwise, pick randomly.
 
         let largest_np_group_info = largest_non_prev_group_info(&available_persons, previous_group);
-        println!("Large group info: {:?}", largest_np_group_info);
-        println!("Previous group: {:?}", previous_group);
+        //println!("Large group info: {:?}", largest_np_group_info);
+        //println!("Previous group: {:?}", previous_group);
 
         if (largest_np_group_info.size * 2) > available_persons.len() {
             // pick from largest, non-previous group 
             let candidates = available_persons.iter().filter(|&p| p.group == largest_np_group_info.group).cloned().collect::<Vec<Person>>();
-            println!("Largest remaining group candidates: {:#?}", candidates);
+            //println!("Largest remaining group candidates: {:#?}", candidates);
             let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-            println!("Largest remaining group choice: {:?}", choice);
+            //println!("Largest remaining group choice: {:?}", choice);
             move_person(&mut available_persons, &mut persons_path, choice);
             previous_group = choice.group;
         } else {
             // pick from random, non-previous group
             let candidates = available_persons.iter().filter(|&p| p.group != previous_group).cloned().collect::<Vec<Person>>();
-            println!("Random group candidates: {:#?}", candidates);
+            //println!("Random group candidates: {:#?}", candidates);
             let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-            println!("Random group choice: {:?}", choice);
+            //println!("Random group choice: {:?}", choice);
             move_person(&mut available_persons, &mut persons_path, choice);
             previous_group = choice.group;
         }
@@ -119,20 +119,25 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
 pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 
     //println!("Begining participants{:#?}", from_persons);
-    println!("Beginning largest group info: {:#?}", largest_group_info(&from_persons));
-    println!("Beginning particiant count: {:#?}", from_persons.len());
+    //println!("Beginning largest group info: {:#?}", largest_group_info(&from_persons));
+    //println!("Beginning particiant count: {:#?}", from_persons.len());
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
-    println!("Possible Hamlitonian path: {:#?}", possible_path);
+    //println!("Possible Hamlitonian path: {:#?}", possible_path);
     
     if !possible_path {
-        panic!("Could not find a possible hamiltonian path.")
+        panic!("Sorry, no possible hamiltonian path with this set of groups.")
     }
 
-    let mypath = generate_path(&from_persons);
+    // keep generating paths until one is valid
+    let mut good_to_go = false;
+    let mut mypath: Vec<Person> = vec!();
+    while !good_to_go {
+        mypath = generate_path(&from_persons);
+        if is_gift_path_valid(&mypath) {
+            good_to_go = true;
+        }
+    }
 
-    println!("Is cycle: {:#?}", is_a_cycle(&mypath));
-    println!("Is Gift Path valid: {:#?}", is_gift_path_valid(&mypath));
-    
     mypath
 }
