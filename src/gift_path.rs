@@ -141,3 +141,22 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 
     mypath
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_gift_path() {
+
+        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
+        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
+        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2,"programming".to_string());
+        let person4= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),2,"comedy".to_string());
+
+        let participants = vec!(person1, person2, person3, person4);
+
+        let mypath = get_gift_path(participants);
+        assert_eq!(mypath.len(), 4);
+    }
+}
