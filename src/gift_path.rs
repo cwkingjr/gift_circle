@@ -159,4 +159,18 @@ mod tests {
         let mypath = get_gift_path(participants);
         assert_eq!(mypath.len(), 4);
     }
+
+    #[test]
+    #[should_panic]
+    fn test_get_gift_path_panics_with_too_few_entries() {
+
+        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
+        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
+        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2,"programming".to_string());
+
+        let participants = vec!(person1, person2, person3);
+
+        get_gift_path(participants);
+    }
+    
 }
