@@ -3,14 +3,14 @@ use rand::seq::SliceRandom;
 
 
 #[derive(Debug)]
-struct GroupInfo {
-    group: usize,
+struct Group {
+    number: usize,
     size: usize,
 }
 
-impl GroupInfo {
-    fn new(group: usize, size: usize) -> Self {
-        GroupInfo { group, size }
+impl Group {
+    fn new(number: usize, size: usize) -> Self {
+        Group { number, size }
     }
 }
 
@@ -18,28 +18,28 @@ impl GroupInfo {
 pub struct Person {
     pub name: String,
     pub email_address: String,
-    pub group: usize,
+    pub group_number: usize,
     pub theme: String,
 }
 
 impl Person {
-    pub fn new(name: String, email_address: String, group: usize, theme: String) -> Self {
-        Person { name, email_address, group, theme }
+    pub fn new(name: String, email_address: String, group_number: usize, theme: String) -> Self {
+        Person { name, email_address, group_number, theme }
     }
 }
 
-fn largest_group_info(persons: &Vec<Person>) -> GroupInfo {        
-    let group_counter = persons.iter().map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
-    GroupInfo::new(group_counter[0].0, group_counter[0].1)
+fn largest_group(persons: &Vec<Person>) -> Group {        
+    let group_counter = persons.iter().map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
+    Group::new(group_counter[0].0, group_counter[0].1)
 }
 
-fn largest_non_prev_group_info(persons: &Vec<Person>, previous_group: usize) -> GroupInfo {        
-    let group_counter = persons.iter().filter(|p| p.group != previous_group).map(|p| p.group).collect::<Counter<_>>().most_common_ordered();
-    GroupInfo::new(group_counter[0].0, group_counter[0].1)
+fn largest_non_prev_group(persons: &Vec<Person>, previous_group: usize) -> Group {        
+    let group_counter = persons.iter().filter(|p| p.group_number != previous_group).map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
+    Group::new(group_counter[0].0, group_counter[0].1)
 }
 
 fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
-    (largest_group_info(persons).size * 2) <= persons.len() 
+    (largest_group(persons).size * 2) <= persons.len() 
 }
 
 // Last person gives gift to first person so can't be in the same group.
@@ -48,8 +48,8 @@ fn is_a_cycle(persons: &Vec<Person>) -> bool {
         panic!("You must submit at least three people in order to form a gift circle.")
     }
 
-    let first_group = persons.first().unwrap().group;
-    let last_group = persons.last().unwrap().group;
+    let first_group = persons.first().unwrap().group_number;
+    let last_group = persons.last().unwrap().group_number;
 
     first_group != last_group
 }
@@ -58,10 +58,10 @@ fn is_a_cycle(persons: &Vec<Person>) -> bool {
 fn is_head_group_diff_from_tail_group(persons: &Vec<Person>) -> bool {
     let mut previous_group: usize = 0;
     for person in persons.iter() {
-        if person.group == previous_group {
+        if person.group_number == previous_group {
             return false;
         }
-        previous_group = person.group;
+        previous_group = person.group_number;
     }
     true
 }
@@ -90,26 +90,26 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         // If the largest group is half (or more) than the total remaining, we have
         // to pick someone from that group. Otherwise, pick randomly.
 
-        let largest_np_group_info = largest_non_prev_group_info(&available_persons, previous_group);
-        //println!("Large group info: {:?}", largest_np_group_info);
+        let largest_np_group = largest_non_prev_group(&available_persons, previous_group);
+        //println!("Large group: {:?}", largest_np_group);
         //println!("Previous group: {:?}", previous_group);
 
-        if (largest_np_group_info.size * 2) > available_persons.len() {
+        if (largest_np_group.size * 2) > available_persons.len() {
             // pick from largest, non-previous group 
-            let candidates = available_persons.iter().filter(|&p| p.group == largest_np_group_info.group).cloned().collect::<Vec<Person>>();
+            let candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
             //println!("Largest remaining group candidates: {:#?}", candidates);
             let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
             //println!("Largest remaining group choice: {:?}", choice);
             move_person(&mut available_persons, &mut persons_path, choice);
-            previous_group = choice.group;
+            previous_group = choice.group_number;
         } else {
             // pick from random, non-previous group
-            let candidates = available_persons.iter().filter(|&p| p.group != previous_group).cloned().collect::<Vec<Person>>();
+            let candidates = available_persons.iter().filter(|&p| p.group_number != previous_group).cloned().collect::<Vec<Person>>();
             //println!("Random group candidates: {:#?}", candidates);
             let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
             //println!("Random group choice: {:?}", choice);
             move_person(&mut available_persons, &mut persons_path, choice);
-            previous_group = choice.group;
+            previous_group = choice.group_number;
         }
     }
 
@@ -119,7 +119,7 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
 pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 
     //println!("Begining participants{:#?}", from_persons);
-    //println!("Beginning largest group info: {:#?}", largest_group_info(&from_persons));
+    //println!("Beginning largest group: {:#?}", largest_group(&from_persons));
     //println!("Beginning particiant count: {:#?}", from_persons.len());
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
