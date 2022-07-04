@@ -4,12 +4,12 @@ use serde::{Deserialize,Serialize};
 
 #[derive(Debug)]
 struct Group {
-    number: usize,
-    size: usize,
+    number: u16,
+    size: u16,
 }
 
 impl Group {
-    fn new(number: usize, size: usize) -> Self {
+    fn new(number: u16, size: u16) -> Self {
         Group { number, size }
     }
 }
@@ -18,22 +18,22 @@ impl Group {
 pub struct Person {
     pub name: String,
     pub email_address: String,
-    pub group_number: usize,
+    pub group_number: u16,
     pub theme: String,
 }
 
 fn largest_group(persons: &Vec<Person>) -> Group {        
     let group_counter = persons.iter().map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
-    Group::new(group_counter[0].0, group_counter[0].1)
+    Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
-fn largest_non_prev_group(persons: &Vec<Person>, previous_group: usize) -> Group {        
+fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {        
     let group_counter = persons.iter().filter(|p| p.group_number != previous_group).map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
-    Group::new(group_counter[0].0, group_counter[0].1)
+    Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
 fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
-    (largest_group(persons).size * 2) <= persons.len() 
+    (largest_group(persons).size * 2) <= persons.len() as u16
 }
 
 // Last person gives gift to first person so can't be in the same group.
@@ -50,7 +50,7 @@ fn is_a_cycle(persons: &Vec<Person>) -> bool {
 
 // Detemines that there are no adjoining entries with the same group
 fn is_head_group_diff_from_tail_group(persons: &Vec<Person>) -> bool {
-    let mut previous_group: usize = 0;
+    let mut previous_group: u16 = 0;
     for person in persons.iter() {
         if person.group_number == previous_group {
             return false;
@@ -78,7 +78,7 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
 
     let mut persons_path:  Vec<Person> = vec!();
 
-    let mut previous_group: usize = 0;
+    let mut previous_group: u16 = 0;
     
     while available_persons.len() > 0 {
         // If the largest group is half (or more) than the total remaining, we have
@@ -88,7 +88,7 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         //println!("Large group: {:?}", largest_np_group);
         //println!("Previous group: {:?}", previous_group);
 
-        if (largest_np_group.size * 2) > available_persons.len() {
+        if (largest_np_group.size as usize * 2) > available_persons.len() {
             // pick from largest, non-previous group 
             let candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
             //println!("Largest remaining group candidates: {:#?}", candidates);
@@ -123,13 +123,12 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
         panic!("Sorry, no possible hamiltonian path with this set of groups.")
     }
 
-    // keep generating paths until one is valid
-    let mut good_to_go = false;
+    let mut have_valid_path = false;
     let mut mypath: Vec<Person> = vec!();
-    while !good_to_go {
+    while !have_valid_path {
         mypath = generate_path(&from_persons);
         if is_gift_path_valid(&mypath) {
-            good_to_go = true;
+            have_valid_path = true;
         }
     }
 
@@ -142,7 +141,7 @@ mod tests {
 
     // moved from Person section because it was no longer used there
     impl Person {
-        pub fn new(name: String, email_address: String, group_number: usize, theme: String) -> Self {
+        pub fn new(name: String, email_address: String, group_number: u16, theme: String) -> Self {
             Person { name, email_address, group_number, theme }
         }
     }
