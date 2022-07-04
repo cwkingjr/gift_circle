@@ -1,6 +1,6 @@
 use counter::Counter;
 use rand::seq::SliceRandom;
-
+use serde::{Deserialize,Serialize};
 
 #[derive(Debug)]
 struct Group {
@@ -14,18 +14,12 @@ impl Group {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
 pub struct Person {
     pub name: String,
     pub email_address: String,
     pub group_number: usize,
     pub theme: String,
-}
-
-impl Person {
-    pub fn new(name: String, email_address: String, group_number: usize, theme: String) -> Self {
-        Person { name, email_address, group_number, theme }
-    }
 }
 
 fn largest_group(persons: &Vec<Person>) -> Group {        
@@ -145,6 +139,13 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // moved from Person section because it was no longer used there
+    impl Person {
+        pub fn new(name: String, email_address: String, group_number: usize, theme: String) -> Self {
+            Person { name, email_address, group_number, theme }
+        }
+    }
 
     #[test]
     fn test_get_gift_path() {

@@ -1,21 +1,50 @@
 mod gift_path;
 
+use std::env;
+use std::error::Error;
+use std::ffi::OsString;
+use std::io;
+use std::process;
+
 use gift_path::{Person, get_gift_path};
 
-fn main() {
+fn run() -> Result<(), Box<dyn Error>> {
+    let file_path = get_first_arg()?;
+    let mut rdr = csv::Reader::from_path(file_path)?;
+    let mut wtr = csv::Writer::from_writer(io::stdout());
 
-    let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
-    let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
-    let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2,"programming".to_string());
-    let person4= Person::new("Daughter 2".to_string(),"duaghter2@example.com".to_string(),2,"camping".to_string());
-    let person5= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),3,"writing".to_string());
-    let person6= Person::new("Son 2".to_string(),"son2@example.com".to_string(),3,"doctoring".to_string());
+    let mut participants: Vec<Person> = vec![];
 
-    let participants = vec!(person1, person2, person3, person4, person5, person6);
-    println!("Submitted participants{:#?}", &participants);
+    for result in rdr.deserialize() {
+        let record: Person = result?;
+        participants.push(record);
+    }
 
     let mypath = get_gift_path(participants);
+    for person in mypath {
+        wtr.serialize(person)?;
+    }
 
-    println!("Gift Circle count: {:#?}", mypath.len());
-    println!("Gift Circle order: {:#?}", mypath);
+    match wtr.flush() {
+        // convert the io error into a box dyn error to match return type
+        Err(e) => Err(Box::from(e)),
+        _ => Ok(())
+    }
+
+}
+
+/// Returns the first positional argument sent to this process. If there are no
+/// positional arguments, then this returns an error.
+fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
+    match env::args_os().nth(1) {
+        None => Err(From::from("expected 1 argument, but got none")),
+        Some(file_path) => Ok(file_path),
+    }
+}
+
+fn main() {
+    if let Err(err) = run() {
+        println!("{}", err);
+        process::exit(1);
+    }
 }

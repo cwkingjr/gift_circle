@@ -1,0 +1,7 @@
+name,email_address,group_number,theme
+Father,father@example.com,1,reading
+Mother,mother@example.com,1,coloring
+Son,son@example.com,2,programming
+Daughter 2,duaghter2@example.com,2,camping
+Daughter,daughter@example.com,3,writing
+Son 2,son2@example.com,3,doctoring
