@@ -18,8 +18,7 @@ impl Group {
 pub struct Person {
     pub name: String,
     pub email_address: String,
-    pub group_number: u16,
-    pub theme: String,
+    pub group_number: u16
 }
 
 fn largest_group(persons: &Vec<Person>) -> Group {        
@@ -33,7 +32,7 @@ fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {
 }
 
 fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
-    (largest_group(persons).size * 2) <= persons.len() as u16
+    (largest_group(persons).size as usize * 2) <= persons.len()
 }
 
 // Last person gives gift to first person so can't be in the same group.
@@ -141,18 +140,18 @@ mod tests {
 
     // moved from Person section because it was no longer used there
     impl Person {
-        pub fn new(name: String, email_address: String, group_number: u16, theme: String) -> Self {
-            Person { name, email_address, group_number, theme }
+        pub fn new(name: String, email_address: String, group_number: u16) -> Self {
+            Person { name, email_address, group_number }
         }
     }
 
     #[test]
     fn test_get_gift_path() {
 
-        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
-        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
-        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2,"programming".to_string());
-        let person4= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),2,"comedy".to_string());
+        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
+        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
+        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
+        let person4= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),2);
 
         let participants = vec!(person1, person2, person3, person4);
 
@@ -164,9 +163,9 @@ mod tests {
     #[should_panic]
     fn test_get_gift_path_panics_with_too_few_entries() {
 
-        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1,"reading".to_string());
-        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1,"coloring".to_string());
-        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2,"programming".to_string());
+        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
+        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
+        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
 
         let participants = vec!(person1, person2, person3);
 
