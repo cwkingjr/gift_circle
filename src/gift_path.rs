@@ -47,8 +47,7 @@ fn is_a_cycle(persons: &Vec<Person>) -> bool {
     first_group != last_group
 }
 
-// Detemines that there are no adjoining entries with the same group
-fn is_head_group_diff_from_tail_group(persons: &Vec<Person>) -> bool {
+fn has_no_consecutive_group_numbers(persons: &Vec<Person>) -> bool {
     let mut previous_group: u16 = 0;
     for person in persons.iter() {
         if person.group_number == previous_group {
@@ -60,7 +59,7 @@ fn is_head_group_diff_from_tail_group(persons: &Vec<Person>) -> bool {
 }
 
 fn is_gift_path_valid(persons: &Vec<Person>) -> bool {
-    is_head_group_diff_from_tail_group(persons) && is_a_cycle(persons)
+    has_no_consecutive_group_numbers(persons) && is_a_cycle(persons)
 }
 
 fn move_person(from_persons: &mut Vec<Person>, to_persons: &mut Vec<Person>, person: &Person) {
