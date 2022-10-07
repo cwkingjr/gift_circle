@@ -75,7 +75,7 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
     // Preserve the original list of particiants in case we need it to start again when no path found.
     let mut available_persons: Vec<Person> = from_persons.clone();
 
-    let mut persons_path:  Vec<Person> = vec!();
+    let mut persons_path:  Vec<Person> = vec![];
 
     let mut previous_group: u16 = 0;
     
@@ -87,23 +87,22 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         //println!("Large group: {:?}", largest_np_group);
         //println!("Previous group: {:?}", previous_group);
 
+        let candidates: Vec<Person>;
+
         if (largest_np_group.size as usize * 2) > available_persons.len() {
             // pick from largest, non-previous group 
-            let candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
+            candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
             //println!("Largest remaining group candidates: {:#?}", candidates);
-            let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-            //println!("Largest remaining group choice: {:?}", choice);
-            move_person(&mut available_persons, &mut persons_path, choice);
-            previous_group = choice.group_number;
         } else {
             // pick from random, non-previous group
-            let candidates = available_persons.iter().filter(|&p| p.group_number != previous_group).cloned().collect::<Vec<Person>>();
+            candidates = available_persons.iter().filter(|&p| p.group_number != previous_group).cloned().collect::<Vec<Person>>();
             //println!("Random group candidates: {:#?}", candidates);
-            let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-            //println!("Random group choice: {:?}", choice);
-            move_person(&mut available_persons, &mut persons_path, choice);
-            previous_group = choice.group_number;
         }
+
+        let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
+        //println!("Random group choice: {:?}", choice);
+        move_person(&mut available_persons, &mut persons_path, choice);
+        previous_group = choice.group_number;
     }
 
     persons_path
