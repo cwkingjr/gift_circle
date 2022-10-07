@@ -117,13 +117,22 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
         panic!("Sorry, no possible hamiltonian path with this set of groups.")
     }
 
+    const MAX_ATTEMPTS: u16 = 100;
+    let mut attempt_count: u16 = 0;
+
     let mut have_valid_path = false;
     let mut mypath: Vec<Person> = vec!();
-    while !have_valid_path {
+
+    while !have_valid_path && attempt_count < MAX_ATTEMPTS {
         mypath = generate_path(&from_persons);
         if is_gift_path_valid(&mypath) {
             have_valid_path = true;
         }
+        attempt_count += 1; 
+    }
+
+    if attempt_count == MAX_ATTEMPTS {
+        panic!("Sorry, could not find gift circle in {} attempts", MAX_ATTEMPTS);
     }
 
     mypath
