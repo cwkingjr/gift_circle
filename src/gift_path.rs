@@ -35,11 +35,8 @@ fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
     (largest_group(persons).size as usize * 2) <= persons.len()
 }
 
-// Last person gives gift to first person so can't be in the same group.
-fn is_a_cycle(persons: &Vec<Person>) -> bool {
-    if persons.len() < 2 {
-        panic!("You must submit at least three people in order to form a gift circle.")
-    }
+fn first_and_last_groups_are_different(persons: &Vec<Person>) -> bool {
+    // Last person gives gift to first person so can't be in the same group.
 
     let first_group = persons.first().unwrap().group_number;
     let last_group = persons.last().unwrap().group_number;
@@ -59,7 +56,7 @@ fn has_no_consecutive_group_numbers(persons: &Vec<Person>) -> bool {
 }
 
 fn is_gift_path_valid(persons: &Vec<Person>) -> bool {
-    has_no_consecutive_group_numbers(persons) && is_a_cycle(persons)
+    first_and_last_groups_are_different(persons) && has_no_consecutive_group_numbers(persons)
 }
 
 fn move_person(from_persons: &mut Vec<Person>, to_persons: &mut Vec<Person>, person: &Person) {
@@ -71,9 +68,10 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
     // Go through the list of available participants and generate a gift path
     // where noone gives a gift to anyone in their same group.
 
-    // Preserve the original list of particiants in case we need it to start again when no path found.
+    // Preserve the from_persons vec for follow on attempts by working with a cloned vec
     let mut available_persons: Vec<Person> = from_persons.clone();
 
+    // Build up the path by adding persons with different group numbers
     let mut persons_path:  Vec<Person> = vec![];
 
     let mut previous_group: u16 = 0;
@@ -83,38 +81,37 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         // to pick someone from that group. Otherwise, pick randomly.
 
         let largest_np_group = largest_non_prev_group(&available_persons, previous_group);
-        //println!("Large group: {:?}", largest_np_group);
-        //println!("Previous group: {:?}", previous_group);
 
         let candidates: Vec<Person>;
 
         if (largest_np_group.size as usize * 2) > available_persons.len() {
-            // pick from largest, non-previous group 
+            // Build candidates list from the remaining persons in the largest group that is not the previous group 
             candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
-            //println!("Largest remaining group candidates: {:#?}", candidates);
         } else {
-            // pick from random, non-previous group
+            // Build the candidates list from all remaining persons not in the previous group
             candidates = available_persons.iter().filter(|&p| p.group_number != previous_group).cloned().collect::<Vec<Person>>();
-            //println!("Random group candidates: {:#?}", candidates);
         }
 
+        // Randomly select one person from the candidates list
         let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
-        //println!("Random group choice: {:?}", choice);
+
+        // Move the selected person from the available list to the path list
         move_person(&mut available_persons, &mut persons_path, choice);
+
         previous_group = choice.group_number;
     }
 
     persons_path
+
 }
 
 pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 
-    //println!("Begining participants{:#?}", from_persons);
-    //println!("Beginning largest group: {:#?}", largest_group(&from_persons));
-    //println!("Beginning particiant count: {:#?}", from_persons.len());
+    if from_persons.len() <= 2 {
+        panic!("You must submit at least three people in order to form a gift circle.")
+    }
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
-    //println!("Possible Hamlitonian path: {:#?}", possible_path);
     
     if !possible_path {
         panic!("Sorry, no possible hamiltonian path with this set of groups.")
@@ -136,7 +133,6 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 mod tests {
     use super::*;
 
-    // moved from Person section because it was no longer used there
     impl Person {
         pub fn new(name: String, email_address: String, group_number: u16) -> Self {
             Person { name, email_address, group_number }

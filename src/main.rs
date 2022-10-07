@@ -16,8 +16,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut participants: Vec<Person> = vec![];
 
     for result in rdr.deserialize() {
-        let record: Person = result?;
-        participants.push(record);
+        let person: Person = result?;
+        participants.push(person);
     }
 
     let mypath = get_gift_path(participants);
@@ -33,11 +33,9 @@ fn run() -> Result<(), Box<dyn Error>> {
 
 }
 
-/// Returns the first positional argument sent to this process. If there are no
-/// positional arguments, then this returns an error.
 fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
     match env::args_os().nth(1) {
-        None => Err(From::from("expected 1 argument, but got none")),
+        None => Err(From::from("expected 1 argument referencing the input file path, but got none")),
         Some(file_path) => Ok(file_path),
     }
 }
