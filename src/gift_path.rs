@@ -36,6 +36,18 @@ fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
     (largest_group(persons).size as usize * 2) <= persons.len()
 }
 
+fn get_duplicate_names(persons: &Vec<Person>) -> Vec<String> {
+    let duplicates = persons
+        .iter()
+        .map(|p|p.name.clone())
+        .collect::<Counter<_>>()
+        .iter()
+        .filter(|(_, v)|**v as u32 > 1)
+        .map(|(k, _)| k.clone())
+        .collect();
+    duplicates
+}
+
 fn first_and_last_groups_are_different(persons: &Vec<Person>) -> bool {
     // Last person gives gift to first person so can't be in the same group.
 
@@ -110,6 +122,13 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
 
     if from_persons.len() <= 2 {
         panic!("You must submit at least three people in order to form a gift circle.")
+    }
+
+    let duplicates: Vec<String> = get_duplicate_names(&from_persons);
+    if !duplicates.is_empty() {
+        println!("No duplicate names allowed in input file and these duplicates were seen:");
+        println!("{:#?}", duplicates);
+        panic!("Please fix input file and try again");
     }
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
@@ -189,6 +208,20 @@ mod tests {
         let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
 
         let participants = vec!(person1, person2, person3);
+
+        get_gift_path(participants);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_get_gift_path_panics_with_duplicate_names() {
+
+        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
+        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
+        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
+        let person4= Person::new("Father".to_string(),"father@example.com".to_string(),3);
+
+        let participants = vec!(person1, person2, person3, person4);
 
         get_gift_path(participants);
     }
