@@ -1,7 +1,10 @@
 name,email_address,group_number
-Father,father@example.com,1
-Mother,mother@example.com,1
-Son 1,son1@example.com,2
-Daughter 2,duaghter2@example.com,2
-Daughter 1,daughter1@example.com,3
-Son 2,son2@example.com,3
+Joe Hill,joe.hill@example.com,1
+Jane Hill,jane.hill@example.com,1
+Kenya Hill,kenya.hill@example.com,1
+Jack Brown,jack.brown@example.com,2
+Jessica Brown,jessica.brown@example.com,2
+Bill Jones,bill.jones@example.com,3
+Beverly Jones,bev.jones@example.com,3
+Billy Jones,billy.jones@example.com,3
+Daisy Jones,daisy.jones@example.com,3

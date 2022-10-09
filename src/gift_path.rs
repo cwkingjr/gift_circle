@@ -14,11 +14,12 @@ impl Group {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize)]
 pub struct Person {
     pub name: String,
     pub email_address: String,
-    pub group_number: u16
+    pub group_number: u16,
+    pub assigned_person_name: Option<String>
 }
 
 fn largest_group(persons: &Vec<Person>) -> Group {        
@@ -135,6 +136,19 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
         panic!("Sorry, could not find gift circle in {} attempts", MAX_ATTEMPTS);
     }
 
+    let last_person_name = mypath.last().unwrap().name.clone();
+
+    for (i, person) in mypath.clone().iter().enumerate() {
+        if person.name == last_person_name {
+            mypath[i].assigned_person_name = Some(mypath[0].name.clone());
+        }
+        else {
+            mypath[i].assigned_person_name = Some(mypath[i+1].name.clone());
+        }
+    }
+
+    println!("#INFO: Found valid circle in {} attempts", attempt_count);
+
     mypath
 }
 
@@ -144,7 +158,11 @@ mod tests {
 
     impl Person {
         pub fn new(name: String, email_address: String, group_number: u16) -> Self {
-            Person { name, email_address, group_number }
+            let mut person = Person::default();
+            person.name = name;
+            person.email_address = email_address;
+            person.group_number = group_number;
+            person
         }
     }
 

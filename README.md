@@ -5,7 +5,7 @@
 The gift_circle software reads a CSV file of gift circle participants and generates gift assignments where each particiant will
 be assigned a person to get a gift for that is not within their own group.
 
-The groups are expected to be family groups where it would be difficult to purchase a gift for someone in that group and keep still keep it a secret given the proximity and exposure of the people in that group.
+The groups are expected to be family groups where it would be difficult to purchase a gift for someone in that group and still keep it a secret given the proximity and exposure of the people in that group.
 
 Given that it is impossible to build a gift circle for certain combinations of groups, this software will make an initial determination of whether it's possible to proceed based upon whether the count of folks in the largest group, times two, is less than or equal to the total number of participants provided.
 
@@ -13,12 +13,15 @@ The format of the CSV must be as below, with this exact header row, with file in
 
 ```shell
 name,email_address,group_number
-Father,father@example.com,1
-Mother,mother@example.com,1
-Son 1,son1@example.com,2
-Daughter 2,duaghter2@example.com,2
-Daughter 1,daughter1@example.com,3
-Son 2,son2@example.com,3
+Joe Hill,joe.hill@example.com,1
+Jane Hill,jane.hill@example.com,1
+Kenya Hill,kenya.hill@example.com,1
+Jack Brown,jack.brown@example.com,2
+Jessica Brown,jessica.brown@example.com,2
+Bill Jones,bill.jones@example.com,3
+Beverly Jones,bev.jones@example.com,3
+Billy Jones,billy.jones@example.com,3
+Daisy Jones,daisy.jones@example.com,3
 ```
 
 ## Use
@@ -29,18 +32,22 @@ Son 2,son2@example.com,3
 ./gift_circle ./participants.csv > ./gift-giving-order.csv
 ```
 
-The software will read the participants file, create a gift circle using those participants, and output a new CSV to stdout that places participants in the order of gift giving. E.g., the first participant in the output will purchase a gift for the second participant, second will purchase for third, ..., last participant will purchase a gift for the first participant.
+The software will read the participants file, create a gift circle using those participants, and output a new CSV to stdout that includes a new column showing the person they are assigned to get a gift for.
 
 Here is an example output. Note the order of the group numbers.
 
 ```shell
-name,email_address,group_number
-Daughter 1,daughter1@example.com,3
-Father,father@example.com,1
-Daughter 2,duaghter2@example.com,2
-Son 2,son2@example.com,3
-Mother,mother@example.com,1
-Son 1,son1@example.com,2
+#INFO: Found valid circle in 3 attempts
+name,email_address,group_number,assigned_person_name
+Jack Brown,jack.brown@example.com,2,Joe Hill
+Joe Hill,joe.hill@example.com,1,Beverly Jones
+Beverly Jones,bev.jones@example.com,3,Jane Hill
+Jane Hill,jane.hill@example.com,1,Bill Jones
+Bill Jones,bill.jones@example.com,3,Jessica Brown
+Jessica Brown,jessica.brown@example.com,2,Billy Jones
+Billy Jones,billy.jones@example.com,3,Kenya Hill
+Kenya Hill,kenya.hill@example.com,1,Daisy Jones
+Daisy Jones,daisy.jones@example.com,3,Jack Brown
 ```
 
 ## Code
