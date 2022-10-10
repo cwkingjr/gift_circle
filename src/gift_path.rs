@@ -22,7 +22,7 @@ pub struct Person {
     pub assigned_person_name: Option<String>,
 }
 
-fn largest_group(persons: &Vec<Person>) -> Group {
+fn largest_group(persons: &[Person]) -> Group {
     let group_counter = persons
         .iter()
         .map(|p| p.group_number)
@@ -31,7 +31,7 @@ fn largest_group(persons: &Vec<Person>) -> Group {
     Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
-fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {
+fn largest_non_prev_group(persons: &[Person], previous_group: u16) -> Group {
     let group_counter = persons
         .iter()
         .filter(|p| p.group_number != previous_group)
@@ -41,11 +41,11 @@ fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {
     Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
-fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
+fn has_possible_hamiltonian_path(persons: &[Person]) -> bool {
     (largest_group(persons).size as usize * 2) <= persons.len()
 }
 
-fn get_duplicate_names(persons: &Vec<Person>) -> Vec<String> {
+fn get_duplicate_names(persons: &[Person]) -> Vec<String> {
     let duplicates = persons
         .iter()
         .map(|p| p.name.clone())
@@ -57,7 +57,7 @@ fn get_duplicate_names(persons: &Vec<Person>) -> Vec<String> {
     duplicates
 }
 
-fn first_and_last_groups_are_different(persons: &Vec<Person>) -> bool {
+fn first_and_last_groups_are_different(persons: &[Person]) -> bool {
     // Last person gives gift to first person so can't be in the same group.
 
     let first_group = persons.first().unwrap().group_number;
@@ -66,7 +66,7 @@ fn first_and_last_groups_are_different(persons: &Vec<Person>) -> bool {
     first_group != last_group
 }
 
-fn has_no_consecutive_group_numbers(persons: &Vec<Person>) -> bool {
+fn has_no_consecutive_group_numbers(persons: &[Person]) -> bool {
     let mut previous_group: u16 = 0;
     for person in persons.iter() {
         if person.group_number == previous_group {
@@ -77,7 +77,7 @@ fn has_no_consecutive_group_numbers(persons: &Vec<Person>) -> bool {
     true
 }
 
-fn is_gift_path_valid(persons: &Vec<Person>) -> bool {
+fn is_gift_path_valid(persons: &[Person]) -> bool {
     first_and_last_groups_are_different(persons) && has_no_consecutive_group_numbers(persons)
 }
 
@@ -86,41 +86,40 @@ fn move_person(from_persons: &mut Vec<Person>, to_persons: &mut Vec<Person>, per
     to_persons.push(person.clone());
 }
 
-fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
+fn generate_path(from_persons: &[Person]) -> Vec<Person> {
     // Go through the list of available participants and generate a gift path
     // where noone gives a gift to anyone in their same group.
 
     // Preserve the from_persons vec for follow on attempts by working with a cloned vec
-    let mut available_persons: Vec<Person> = from_persons.clone();
+    let mut available_persons: Vec<Person> = from_persons.to_owned();
 
     // Build up the path by adding persons with different group numbers
     let mut persons_path: Vec<Person> = vec![];
 
     let mut previous_group: u16 = 0;
 
-    while available_persons.len() > 0 {
+    while !available_persons.is_empty() {
         // If the largest group is half (or more) than the total remaining, we have
         // to pick someone from that group. Otherwise, pick randomly.
 
         let largest_np_group = largest_non_prev_group(&available_persons, previous_group);
 
-        let candidates: Vec<Person>;
-
-        if (largest_np_group.size as usize * 2) > available_persons.len() {
-            // Build candidates list from the remaining persons in the largest group that is not the previous group
-            candidates = available_persons
-                .iter()
-                .filter(|&p| p.group_number == largest_np_group.number)
-                .cloned()
-                .collect::<Vec<Person>>();
-        } else {
-            // Build the candidates list from all remaining persons not in the previous group
-            candidates = available_persons
-                .iter()
-                .filter(|&p| p.group_number != previous_group)
-                .cloned()
-                .collect::<Vec<Person>>();
-        }
+        let candidates: Vec<Person> =
+            if (largest_np_group.size as usize * 2) > available_persons.len() {
+                // Build candidates list from the remaining persons in the largest group that is not the previous group
+                available_persons
+                    .iter()
+                    .filter(|&p| p.group_number == largest_np_group.number)
+                    .cloned()
+                    .collect::<Vec<Person>>()
+            } else {
+                // Build the candidates list from all remaining persons not in the previous group
+                available_persons
+                    .iter()
+                    .filter(|&p| p.group_number != previous_group)
+                    .cloned()
+                    .collect::<Vec<Person>>()
+            };
 
         // Randomly select one person from the candidates list
         let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
