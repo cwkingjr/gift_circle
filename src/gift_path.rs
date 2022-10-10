@@ -1,6 +1,6 @@
 use counter::Counter;
 use rand::seq::SliceRandom;
-use serde::{Deserialize,Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug)]
 struct Group {
@@ -19,16 +19,25 @@ pub struct Person {
     pub name: String,
     pub email_address: String,
     pub group_number: u16,
-    pub assigned_person_name: Option<String>
+    pub assigned_person_name: Option<String>,
 }
 
-fn largest_group(persons: &Vec<Person>) -> Group {        
-    let group_counter = persons.iter().map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
+fn largest_group(persons: &Vec<Person>) -> Group {
+    let group_counter = persons
+        .iter()
+        .map(|p| p.group_number)
+        .collect::<Counter<_>>()
+        .most_common_ordered();
     Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
-fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {        
-    let group_counter = persons.iter().filter(|p| p.group_number != previous_group).map(|p| p.group_number).collect::<Counter<_>>().most_common_ordered();
+fn largest_non_prev_group(persons: &Vec<Person>, previous_group: u16) -> Group {
+    let group_counter = persons
+        .iter()
+        .filter(|p| p.group_number != previous_group)
+        .map(|p| p.group_number)
+        .collect::<Counter<_>>()
+        .most_common_ordered();
     Group::new(group_counter[0].0, group_counter[0].1 as u16)
 }
 
@@ -39,10 +48,10 @@ fn has_possible_hamiltonian_path(persons: &Vec<Person>) -> bool {
 fn get_duplicate_names(persons: &Vec<Person>) -> Vec<String> {
     let duplicates = persons
         .iter()
-        .map(|p|p.name.clone())
+        .map(|p| p.name.clone())
         .collect::<Counter<_>>()
         .iter()
-        .filter(|(_, v)|**v as u32 > 1)
+        .filter(|(_, v)| **v as u32 > 1)
         .map(|(k, _)| k.clone())
         .collect();
     duplicates
@@ -85,10 +94,10 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
     let mut available_persons: Vec<Person> = from_persons.clone();
 
     // Build up the path by adding persons with different group numbers
-    let mut persons_path:  Vec<Person> = vec![];
+    let mut persons_path: Vec<Person> = vec![];
 
     let mut previous_group: u16 = 0;
-    
+
     while available_persons.len() > 0 {
         // If the largest group is half (or more) than the total remaining, we have
         // to pick someone from that group. Otherwise, pick randomly.
@@ -98,11 +107,19 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
         let candidates: Vec<Person>;
 
         if (largest_np_group.size as usize * 2) > available_persons.len() {
-            // Build candidates list from the remaining persons in the largest group that is not the previous group 
-            candidates = available_persons.iter().filter(|&p| p.group_number == largest_np_group.number).cloned().collect::<Vec<Person>>();
+            // Build candidates list from the remaining persons in the largest group that is not the previous group
+            candidates = available_persons
+                .iter()
+                .filter(|&p| p.group_number == largest_np_group.number)
+                .cloned()
+                .collect::<Vec<Person>>();
         } else {
             // Build the candidates list from all remaining persons not in the previous group
-            candidates = available_persons.iter().filter(|&p| p.group_number != previous_group).cloned().collect::<Vec<Person>>();
+            candidates = available_persons
+                .iter()
+                .filter(|&p| p.group_number != previous_group)
+                .cloned()
+                .collect::<Vec<Person>>();
         }
 
         // Randomly select one person from the candidates list
@@ -115,11 +132,9 @@ fn generate_path(from_persons: &Vec<Person>) -> Vec<Person> {
     }
 
     persons_path
-
 }
 
 pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
-
     if from_persons.len() <= 2 {
         panic!("You must submit at least three people in order to form a gift circle.")
     }
@@ -132,7 +147,7 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
     }
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
-    
+
     if !possible_path {
         panic!("Sorry, no possible hamiltonian path with this set of groups.")
     }
@@ -141,18 +156,21 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
     let mut attempt_count: u16 = 0;
 
     let mut have_valid_path = false;
-    let mut mypath: Vec<Person> = vec!();
+    let mut mypath: Vec<Person> = vec![];
 
     while !have_valid_path && attempt_count < MAX_ATTEMPTS {
         mypath = generate_path(&from_persons);
         if is_gift_path_valid(&mypath) {
             have_valid_path = true;
         }
-        attempt_count += 1; 
+        attempt_count += 1;
     }
 
     if attempt_count == MAX_ATTEMPTS {
-        panic!("Sorry, could not find gift circle in {} attempts", MAX_ATTEMPTS);
+        panic!(
+            "Sorry, could not find gift circle in {} attempts",
+            MAX_ATTEMPTS
+        );
     }
 
     let last_person_name = mypath.last().unwrap().name.clone();
@@ -160,9 +178,8 @@ pub fn get_gift_path(from_persons: Vec<Person>) -> Vec<Person> {
     for (i, person) in mypath.clone().iter().enumerate() {
         if person.name == last_person_name {
             mypath[i].assigned_person_name = Some(mypath[0].name.clone());
-        }
-        else {
-            mypath[i].assigned_person_name = Some(mypath[i+1].name.clone());
+        } else {
+            mypath[i].assigned_person_name = Some(mypath[i + 1].name.clone());
         }
     }
 
@@ -187,13 +204,16 @@ mod tests {
 
     #[test]
     fn test_get_gift_path() {
+        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
+        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
+        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
+        let person4 = Person::new(
+            "Daughter".to_string(),
+            "daughter@example.com".to_string(),
+            2,
+        );
 
-        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
-        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
-        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
-        let person4= Person::new("Daughter".to_string(),"daughter@example.com".to_string(),2);
-
-        let participants = vec!(person1, person2, person3, person4);
+        let participants = vec![person1, person2, person3, person4];
 
         let mypath = get_gift_path(participants);
         assert_eq!(mypath.len(), 4);
@@ -202,12 +222,11 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_path_panics_with_too_few_entries() {
+        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
+        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
+        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
 
-        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
-        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
-        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
-
-        let participants = vec!(person1, person2, person3);
+        let participants = vec![person1, person2, person3];
 
         get_gift_path(participants);
     }
@@ -215,15 +234,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_path_panics_with_duplicate_names() {
+        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
+        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
+        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
+        let person4 = Person::new("Father".to_string(), "father@example.com".to_string(), 3);
 
-        let person1= Person::new("Father".to_string(),"father@example.com".to_string(),1);
-        let person2= Person::new("Mother".to_string(),"mother@example.com".to_string(),1);
-        let person3= Person::new("Son".to_string(),"son@example.com".to_string(),2);
-        let person4= Person::new("Father".to_string(),"father@example.com".to_string(),3);
-
-        let participants = vec!(person1, person2, person3, person4);
+        let participants = vec![person1, person2, person3, person4];
 
         get_gift_path(participants);
     }
-    
 }

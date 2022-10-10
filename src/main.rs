@@ -6,7 +6,7 @@ use std::ffi::OsString;
 use std::io;
 use std::process;
 
-use gift_path::{Person, get_gift_path};
+use gift_path::{get_gift_path, Person};
 
 fn run() -> Result<(), Box<dyn Error>> {
     let file_path = get_first_arg()?;
@@ -28,14 +28,15 @@ fn run() -> Result<(), Box<dyn Error>> {
     match wtr.flush() {
         // convert the io error into a box dyn error to match return type
         Err(e) => Err(Box::from(e)),
-        _ => Ok(())
+        _ => Ok(()),
     }
-
 }
 
 fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
     match env::args_os().nth(1) {
-        None => Err(From::from("expected 1 argument referencing the input file path, but got none")),
+        None => Err(From::from(
+            "expected 1 argument referencing the input file path, but got none",
+        )),
         Some(file_path) => Ok(file_path),
     }
 }
