@@ -56,8 +56,10 @@ This code was written and compiled on an Intel-based MacBook Pro, so the release
 
 If you have a different machine, you can install Rust for your machine, download the repo (git clone) or source code to your machine, and compile it from the repo folder: "cargo build --release". You can also run these:
 
+```sh
 cargo test
 cargo run -- --help
 cargo run -- --i=./src/example-participants.csv
 cargo build
 ./target/debug/gift_circle --i=./src/example-participants.csv
+```
