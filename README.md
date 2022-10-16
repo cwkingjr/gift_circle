@@ -2,10 +2,9 @@
 
 ## Expanation
 
-The gift_circle software reads a CSV file of gift circle participants and generates gift assignments where each particiant will
-be assigned a person to get a gift for that is not within their own group.
+The gift_circle software reads a CSV file of gift circle participants and generates gift assignments where each particiant will be assigned a person to get a gift for that is not within their own group.
 
-The groups are expected to be family groups where it would be difficult to purchase a gift for someone in that group and still keep it a secret given the proximity and exposure of the people in that group.
+The groups are assumed to be family groups where it would be difficult to purchase a gift for someone in that group and still keep it a secret given the proximity and exposure of the people in that group.
 
 Given that it is impossible to build a gift circle for certain combinations of groups, this software will make an initial determination of whether it's possible to proceed based upon whether the count of folks in the largest group, times two, is less than or equal to the total number of participants provided.
 
@@ -27,12 +26,13 @@ Daisy Jones,daisy.jones@example.com,3
 ## Use
 
 ```shell
-./gift_circle path/to/participants.csv
-./gift_circle ./participants.csv
-./gift_circle ./participants.csv > ./gift-giving-order.csv
+./gift_circle --help
+./gift_circle -i=path/to/participants.csv
+./gift_circle --input=./participants.csv
+./gift_circle -i=./participants.csv > ./gift-assignments.csv
 ```
 
-The software will read the participants file, create a gift circle using those participants, and output a new CSV to stdout that includes a new column showing the person they are assigned to get a gift for.
+The software will read the participants file, create a gift circle using those participants, and output a new CSV to stdout that includes a new column (assigned_person_name) showing the person they are assigned to get a gift for.
 
 Here is an example output. Note the order of the group numbers.
 
@@ -52,6 +52,12 @@ Daisy Jones,daisy.jones@example.com,3,Jack Brown
 
 ## Code
 
-This code was written and compiled on a MacBook, so the binary should work on an Intel-based Mac. If that is not your environment, you can attempt to compile it yourself using Rust.
+This code was written and compiled on an Intel-based MacBook Pro, so the release binary should work on any Intel-based Mac. If you have an Intel MacBook, you should be able to download the gift_cirle binary that is attached to the GitHub release, modify the permissions to make it executable (chmod +x gift_circle), and invoke it against your participants file as shown above.
 
-Install Rust, clone the repo into a local directory, cd into that directory, and run ```cargo build```. Then invoke the debug binary as listed above, but consuming the sample participants file. E.g., ```./target/debug/gift_circle ./src/example-participants.csv```. Then, create your own participants file and execute the binary against your file.
+If you have a different machine, you can install Rust for your machine, download the repo (git clone) or source code to your machine, and compile it from the repo folder: "cargo build --release". You can also run these:
+
+cargo test
+cargo run -- --help
+cargo run -- --i=./src/example-participants.csv
+cargo build
+./target/debug/gift_circle --i=./src/example-participants.csv

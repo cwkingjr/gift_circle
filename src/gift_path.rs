@@ -14,7 +14,7 @@ impl Group {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, Deserialize, Serialize)]
 pub struct Person {
     pub name: String,
     pub email_address: String,
