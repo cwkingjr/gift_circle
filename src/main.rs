@@ -1,4 +1,4 @@
-mod gift_path;
+mod gift_circle;
 mod group;
 mod myargs;
 mod person;
@@ -7,7 +7,7 @@ use std::error::Error;
 use std::io;
 use std::process;
 
-use gift_path::get_gift_path;
+use gift_circle::get_gift_circle;
 use myargs::get_args;
 use person::Person;
 
@@ -24,8 +24,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         participants.push(person);
     }
 
-    let mypath = get_gift_path(participants);
-    for person in mypath {
+    let gift_circle = get_gift_circle(participants);
+    for person in gift_circle {
         wtr.serialize(person)?;
     }
 

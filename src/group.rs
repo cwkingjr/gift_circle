@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Group {
     pub number: u16,
     pub size: u16,
