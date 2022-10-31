@@ -1,24 +1,18 @@
-mod gift_path;
+mod gift_circle;
+mod group;
+mod myargs;
+mod person;
 
 use std::error::Error;
 use std::io;
 use std::process;
 
-use clap::Parser;
-
-use gift_path::{get_gift_path, Person};
-
-/// Program to generate randowm gift circle from folks outside recipient's group
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Args {
-   /// Input file
-   #[arg(short, long)]
-   input: String,
-}
+use gift_circle::get_gift_circle;
+use myargs::get_args;
+use person::Person;
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let args = Args::parse();
+    let args = get_args();
 
     let mut rdr = csv::Reader::from_path(args.input)?;
     let mut wtr = csv::Writer::from_writer(io::stdout());
@@ -30,8 +24,8 @@ fn run() -> Result<(), Box<dyn Error>> {
         participants.push(person);
     }
 
-    let mypath = get_gift_path(participants);
-    for person in mypath {
+    let gift_circle = get_gift_circle(participants);
+    for person in gift_circle {
         wtr.serialize(person)?;
     }
 

@@ -37,7 +37,7 @@ The software will read the participants file, create a gift circle using those p
 Here is an example output. Note the order of the group numbers.
 
 ```shell
-#INFO: Found valid circle in 3 attempts
+#INFO: Found valid gift circle in 3 attempts
 name,email_address,group_number,assigned_person_name
 Jack Brown,jack.brown@example.com,2,Joe Hill
 Joe Hill,joe.hill@example.com,1,Beverly Jones
