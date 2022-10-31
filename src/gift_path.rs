@@ -1,26 +1,8 @@
 use counter::Counter;
 use rand::seq::SliceRandom;
-use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
-struct Group {
-    number: u16,
-    size: u16,
-}
-
-impl Group {
-    fn new(number: u16, size: u16) -> Self {
-        Group { number, size }
-    }
-}
-
-#[derive(Clone, PartialEq, Eq, Debug, Default, Deserialize, Serialize)]
-pub struct Person {
-    pub name: String,
-    pub email_address: String,
-    pub group_number: u16,
-    pub assigned_person_name: Option<String>,
-}
+use super::group::Group;
+use super::person::Person;
 
 fn largest_group(persons: &[Person]) -> Group {
     let group_counter = persons
