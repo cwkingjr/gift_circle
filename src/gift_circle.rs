@@ -178,10 +178,10 @@ mod tests {
     use super::*;
 
     impl Person {
-        pub fn new(name: String, email_address: String, group_number: u16) -> Self {
+        pub fn new(name: &str, group_number: u16) -> Self {
             let mut person = Person::default();
-            person.name = name;
-            person.email_address = email_address;
+            person.name = name.to_string();
+            person.email_address = format!("{}@example.com", &name).to_string();
             person.group_number = group_number;
             person
         }
@@ -189,9 +189,9 @@ mod tests {
 
     #[test]
     fn test_largest_group() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
         let participants = vec![person1, person2, person3];
         let expected_group = Group::new(1, 2u16);
         assert_eq!(largest_group(&participants), expected_group);
@@ -199,14 +199,10 @@ mod tests {
 
     #[test]
     fn test_largest_non_prev_group() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            2,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
+        let person4 = Person::new("Daughter", 2);
         let participants = vec![person1, person2, person3, person4];
         let expected_group = Group::new(1, 2u16);
         assert_eq!(largest_non_prev_group(&participants, 2), expected_group);
@@ -214,108 +210,84 @@ mod tests {
 
     #[test]
     fn test_has_possible_hamiltonian_path_true() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            3,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
+        let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(has_possible_hamiltonian_path(&gift_circle), true);
     }
 
     #[test]
     fn test_has_possible_hamiltonian_path_false() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 1);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            2,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 1);
+        let person4 = Person::new("Daughter", 2);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(has_possible_hamiltonian_path(&gift_circle), false);
     }
 
     #[test]
     fn test_get_duplicate_names() {
-        let person1 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
+        let person1 = Person::new("Mother", 1);
+        let person2 = Person::new("Mother", 1);
         let participants = vec![person1, person2];
         assert_eq!(get_duplicate_names(&participants).len(), 1);
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_true() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 2);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 1);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            3,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 2);
+        let person3 = Person::new("Son", 1);
+        let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(first_and_last_groups_are_different(&gift_circle), true);
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_false() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 2);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 1);
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 2);
+        let person3 = Person::new("Son", 1);
         let gift_circle = vec![person1, person2, person3];
         assert_eq!(first_and_last_groups_are_different(&gift_circle), false);
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_true() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 2);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 1);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            3,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 2);
+        let person3 = Person::new("Son", 1);
+        let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(has_no_consecutive_group_numbers(&gift_circle), true);
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_false() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 2);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            3,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 2);
+        let person3 = Person::new("Son", 2);
+        let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(has_no_consecutive_group_numbers(&gift_circle), false);
     }
 
     #[test]
     fn test_is_gift_circle_valid_true() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 2);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 1);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            3,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 2);
+        let person3 = Person::new("Son", 1);
+        let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
         assert_eq!(is_gift_circle_valid(&gift_circle), true);
     }
 
     #[test]
     fn test_move_person() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
+        let person1 = Person::new("Father", 1);
         let person_to_move = person1.clone();
         let mut move_from = vec![person1];
         let mut move_to: Vec<Person> = vec![];
@@ -326,14 +298,10 @@ mod tests {
 
     #[test]
     fn test_get_gift_circle() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
-        let person4 = Person::new(
-            "Daughter".to_string(),
-            "daughter@example.com".to_string(),
-            2,
-        );
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
+        let person4 = Person::new("Daughter", 2);
 
         let participants = vec![person1, person2, person3, person4];
 
@@ -344,9 +312,9 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_circle_panics_with_too_few_entries() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
 
         let participants = vec![person1, person2, person3];
 
@@ -356,10 +324,10 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_circle_panics_with_duplicate_names() {
-        let person1 = Person::new("Father".to_string(), "father@example.com".to_string(), 1);
-        let person2 = Person::new("Mother".to_string(), "mother@example.com".to_string(), 1);
-        let person3 = Person::new("Son".to_string(), "son@example.com".to_string(), 2);
-        let person4 = Person::new("Father".to_string(), "father@example.com".to_string(), 3);
+        let person1 = Person::new("Father", 1);
+        let person2 = Person::new("Mother", 1);
+        let person3 = Person::new("Son", 2);
+        let person4 = Person::new("Father", 3);
 
         let participants = vec![person1, person2, person3, person4];
 
