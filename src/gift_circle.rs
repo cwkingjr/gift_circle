@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use counter::Counter;
 use rand::seq::SliceRandom;
 
@@ -115,22 +116,23 @@ fn generate_path(from_persons: &[Person]) -> Vec<Person> {
     persons_path
 }
 
-pub fn get_gift_circle(from_persons: Vec<Person>) -> Vec<Person> {
+pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
     if from_persons.len() <= 2 {
-        panic!("You must submit at least three people in order to form a gift circle.")
+        return Err(anyhow!(
+            "You must submit at least three people in order to form a gift circle."
+        ));
     }
 
     let duplicates: Vec<String> = get_duplicate_names(&from_persons);
     if !duplicates.is_empty() {
-        println!("No duplicate names allowed in input file and these duplicates were seen:");
-        println!("{:#?}", duplicates);
-        panic!("Please fix input file and try again");
+        return Err(anyhow!("Found duplicate names: {:#?}", duplicates));
     }
 
     let possible_path = has_possible_hamiltonian_path(&from_persons);
-
     if !possible_path {
-        panic!("Sorry, no possible hamiltonian path with this set of groups.")
+        return Err(anyhow!(
+            "Sorry, no possible hamiltonian path with this set of groups."
+        ));
     }
 
     const MAX_ATTEMPTS: u16 = 100;
@@ -148,10 +150,10 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Vec<Person> {
     }
 
     if attempt_count == MAX_ATTEMPTS {
-        panic!(
+        return Err(anyhow!(
             "Sorry, could not find gift circle in {} attempts",
             MAX_ATTEMPTS
-        );
+        ));
     }
 
     let last_person_name = gift_circle.last().unwrap().name.clone();
@@ -169,7 +171,7 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Vec<Person> {
         attempt_count
     );
 
-    gift_circle
+    Ok(gift_circle)
 }
 
 #[cfg(test)]
@@ -305,25 +307,26 @@ mod tests {
 
         let participants = vec![person1, person2, person3, person4];
 
-        let gift_circle = get_gift_circle(participants);
-        assert_eq!(gift_circle.len(), 4);
+        if let Ok(gift_circle) = get_gift_circle(participants) {
+            assert_eq!(gift_circle.len(), 4);
+        }
     }
 
     #[test]
     #[should_panic]
-    fn test_get_gift_circle_panics_with_too_few_entries() {
+    fn test_get_gift_circle_errors_with_too_few_entries() {
         let person1 = Person::new("Father", 1);
         let person2 = Person::new("Mother", 1);
         let person3 = Person::new("Son", 2);
 
         let participants = vec![person1, person2, person3];
 
-        get_gift_circle(participants);
+        get_gift_circle(participants).unwrap();
     }
 
     #[test]
     #[should_panic]
-    fn test_get_gift_circle_panics_with_duplicate_names() {
+    fn test_get_gift_circle_errors_with_duplicate_names() {
         let person1 = Person::new("Father", 1);
         let person2 = Person::new("Mother", 1);
         let person3 = Person::new("Son", 2);
@@ -331,6 +334,6 @@ mod tests {
 
         let participants = vec![person1, person2, person3, person4];
 
-        get_gift_circle(participants);
+        get_gift_circle(participants).unwrap();
     }
 }
