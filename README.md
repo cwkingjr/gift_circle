@@ -50,6 +50,15 @@ Kenya Hill,kenya.hill@example.com,1,Daisy Jones
 Daisy Jones,daisy.jones@example.com,3,Jack Brown
 ```
 
+### Arrow Print
+
+If you just want a simple, single-line output that shows the name of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
+
+```shell
+cargo run --  -a -i=./src/example-participants.csv
+Beverly Jones -> Kenya Hill -> Billy Jones -> Jane Hill -> Daisy Jones -> Jack Brown -> Bill Jones -> Jessica Brown -> Joe Hill -> Beverly Jones
+```
+
 ## Code
 
 This code was written and compiled on an Intel-based MacBook Pro, so the release binary should work on any Intel-based Mac. If you have an Intel MacBook, you should be able to download the gift_cirle binary that is attached to the GitHub release, modify the permissions to make it executable (chmod +x gift_circle), and invoke it against your participants file as shown above.
@@ -60,6 +69,7 @@ If you have a different machine, you can install Rust for your machine, download
 cargo test
 cargo run -- --help
 cargo run -- --i=./src/example-participants.csv
+cargo run --  -a -i=./src/example-participants.csv
 cargo build
 ./target/debug/gift_circle --i=./src/example-participants.csv
 ```
