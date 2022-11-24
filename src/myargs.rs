@@ -5,8 +5,10 @@ use clap::Parser;
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Input file
-    #[arg(short, long)]
+    #[arg(long, short)]
     pub input: String,
+    #[clap(long, short, action)]
+    pub arrow_print: bool,
 }
 
 pub fn get_args() -> Args {
