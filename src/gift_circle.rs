@@ -181,11 +181,12 @@ mod tests {
 
     impl Person {
         pub fn new(name: &str, group_number: u16) -> Self {
-            let mut person = Person::default();
-            person.name = name.to_string();
-            person.email_address = format!("{}@example.com", &name).to_string();
-            person.group_number = group_number;
-            person
+            Person {
+                name: name.to_string(),
+                email_address: format!("{}@example.com", &name),
+                group_number,
+                ..Default::default()
+            }
         }
     }
 
@@ -217,7 +218,7 @@ mod tests {
         let person3 = Person::new("Son", 2);
         let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(has_possible_hamiltonian_path(&gift_circle), true);
+        assert!(has_possible_hamiltonian_path(&gift_circle));
     }
 
     #[test]
@@ -227,7 +228,7 @@ mod tests {
         let person3 = Person::new("Son", 1);
         let person4 = Person::new("Daughter", 2);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(has_possible_hamiltonian_path(&gift_circle), false);
+        assert!(!has_possible_hamiltonian_path(&gift_circle));
     }
 
     #[test]
@@ -245,7 +246,7 @@ mod tests {
         let person3 = Person::new("Son", 1);
         let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(first_and_last_groups_are_different(&gift_circle), true);
+        assert!(first_and_last_groups_are_different(&gift_circle));
     }
 
     #[test]
@@ -254,7 +255,7 @@ mod tests {
         let person2 = Person::new("Mother", 2);
         let person3 = Person::new("Son", 1);
         let gift_circle = vec![person1, person2, person3];
-        assert_eq!(first_and_last_groups_are_different(&gift_circle), false);
+        assert!(!first_and_last_groups_are_different(&gift_circle));
     }
 
     #[test]
@@ -264,7 +265,7 @@ mod tests {
         let person3 = Person::new("Son", 1);
         let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(has_no_consecutive_group_numbers(&gift_circle), true);
+        assert!(has_no_consecutive_group_numbers(&gift_circle));
     }
 
     #[test]
@@ -274,7 +275,7 @@ mod tests {
         let person3 = Person::new("Son", 2);
         let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(has_no_consecutive_group_numbers(&gift_circle), false);
+        assert!(!has_no_consecutive_group_numbers(&gift_circle));
     }
 
     #[test]
@@ -284,7 +285,7 @@ mod tests {
         let person3 = Person::new("Son", 1);
         let person4 = Person::new("Daughter", 3);
         let gift_circle = vec![person1, person2, person3, person4];
-        assert_eq!(is_gift_circle_valid(&gift_circle), true);
+        assert!(is_gift_circle_valid(&gift_circle));
     }
 
     #[test]
