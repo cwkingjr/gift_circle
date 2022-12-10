@@ -36,15 +36,14 @@ fn run() -> Result<()> {
         let first_person = &names.first().unwrap().clone();
         names.push(first_person.to_string());
 
-        println!("{}", &names.join(" -> "));
-        Ok(())
-    } else {
-        let mut wtr = csv::Writer::from_writer(io::stdout());
-        for person in gift_circle {
-            wtr.serialize(person)?;
-        }
-        Ok(wtr.flush()?)
+        println!("#{}", &names.join(" -> "));
     }
+
+    let mut wtr = csv::Writer::from_writer(io::stdout());
+    for person in gift_circle {
+        wtr.serialize(person)?;
+    }
+    Ok(wtr.flush()?)
 }
 
 fn main() {
