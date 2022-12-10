@@ -37,7 +37,7 @@ The software will read the participants file, create a gift circle using those p
 Here is an example output. Note the order of the group numbers.
 
 ```shell
-#INFO: Found valid gift circle in 3 attempts
+#INFO: Found valid gift circle in 2 attempts
 name,email_address,group_number,assigned_person_name
 Jack Brown,jack.brown@example.com,2,Joe Hill
 Joe Hill,joe.hill@example.com,1,Beverly Jones
@@ -52,18 +52,28 @@ Daisy Jones,daisy.jones@example.com,3,Jack Brown
 
 ### Arrow Print
 
-If you just want a simple, single-line output that shows the name of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
+If you want to add a line to the output that shows only the names of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
 
 ```shell
-cargo run --  -a -i=./src/example-participants.csv
-Beverly Jones -> Kenya Hill -> Billy Jones -> Jane Hill -> Daisy Jones -> Jack Brown -> Bill Jones -> Jessica Brown -> Joe Hill -> Beverly Jones
+#INFO: Found valid gift circle in 3 attempts
+#Jessica Brown -> Bill Jones -> Kenya Hill -> Jack Brown -> Daisy Jones -> Joe Hill -> Billy Jones -> Jane Hill -> Beverly Jones -> Jessica Brown
+name,email_address,group_number,assigned_person_name
+Jessica Brown,jessica.brown@example.com,2,Bill Jones
+Bill Jones,bill.jones@example.com,3,Kenya Hill
+Kenya Hill,kenya.hill@example.com,1,Jack Brown
+Jack Brown,jack.brown@example.com,2,Daisy Jones
+Daisy Jones,daisy.jones@example.com,3,Joe Hill
+Joe Hill,joe.hill@example.com,1,Billy Jones
+Billy Jones,billy.jones@example.com,3,Jane Hill
+Jane Hill,jane.hill@example.com,1,Beverly Jones
+Beverly Jones,bev.jones@example.com,3,Jessica Brown
 ```
 
 ## Code
 
-This code was written and compiled on an Intel-based MacBook Pro, so the release binary should work on any Intel-based Mac. If you have an Intel MacBook, you should be able to download the gift_cirle binary that is attached to the GitHub release, modify the permissions to make it executable (chmod +x gift_circle), and invoke it against your participants file as shown above.
+This code was written and compiled on an Intel-based MacBook Pro (Ventura 13.0.1). If you have an Intel MacBook , you should be able to download the gift_cirle binary that is attached to the GitHub release, modify the permissions to make it executable (chmod +x gift_circle), and invoke it against your participants file as shown above.
 
-If you have a different machine, you can install Rust for your machine, download the repo (git clone) or source code to your machine, and compile it from the repo folder: "cargo build --release". You can also run these:
+If you have a different machine, you can install Rust for your machine, download the repo (git clone) or source code to your machine, and compile it from the repo folder: `cargo build --release`. You can also run these:
 
 ```sh
 cargo test
@@ -72,4 +82,12 @@ cargo run -- --i=./src/example-participants.csv
 cargo run --  -a -i=./src/example-participants.csv
 cargo build
 ./target/debug/gift_circle --i=./src/example-participants.csv
+```
+
+Once the gift_circle binary is moved into your path (e.g., /usr/bin/gift_circle), of course you may invoke it like this:
+
+```sh
+gift_circle -h
+gift_circle -i=./example-participants.csv
+gift_circle -a -i=~./my-participants.csv
 ```
