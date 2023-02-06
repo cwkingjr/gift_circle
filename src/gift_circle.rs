@@ -189,100 +189,108 @@ mod tests {
 
     #[test]
     fn test_largest_group() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-        let participants = vec![person1, person2, person3];
-        let expected_group = Group::new(1, 2u16);
-        assert_eq!(largest_group(&participants), expected_group);
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+        ];
+        assert_eq!(largest_group(&participants), Group::new(1, 2u16));
     }
 
     #[test]
     fn test_largest_non_prev_group() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-        let person4 = Person::new("Daughter", 2);
-        let participants = vec![person1, person2, person3, person4];
-        let expected_group = Group::new(1, 2u16);
-        assert_eq!(largest_non_prev_group(&participants, 2), expected_group);
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+            Person::new("Daughter", 2),
+        ];
+        assert_eq!(
+            largest_non_prev_group(&participants, 2),
+            Group::new(1, 2u16)
+        );
     }
 
     #[test]
     fn test_has_possible_hamiltonian_path_true() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-        let person4 = Person::new("Daughter", 3);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(has_possible_hamiltonian_path(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+            Person::new("Daughter", 3),
+        ];
+        assert!(has_possible_hamiltonian_path(&participants));
     }
 
     #[test]
     fn test_has_possible_hamiltonian_path_false() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 1);
-        let person4 = Person::new("Daughter", 2);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(!has_possible_hamiltonian_path(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 1),
+            Person::new("Daughter", 2),
+        ];
+        assert!(!has_possible_hamiltonian_path(&participants));
     }
 
     #[test]
     fn test_get_duplicate_names() {
-        let person1 = Person::new("Mother", 1);
-        let person2 = Person::new("Mother", 1);
-        let participants = vec![person1, person2];
+        let participants = vec![Person::new("Mother", 1), Person::new("Mother", 1)];
         assert_eq!(get_duplicate_names(&participants).len(), 1);
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_true() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 2);
-        let person3 = Person::new("Son", 1);
-        let person4 = Person::new("Daughter", 3);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(first_and_last_groups_are_different(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 1),
+            Person::new("Daughter", 3),
+        ];
+        assert!(first_and_last_groups_are_different(&participants));
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_false() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 2);
-        let person3 = Person::new("Son", 1);
-        let gift_circle = vec![person1, person2, person3];
-        assert!(!first_and_last_groups_are_different(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 1),
+        ];
+        assert!(!first_and_last_groups_are_different(&participants));
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_true() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 2);
-        let person3 = Person::new("Son", 1);
-        let person4 = Person::new("Daughter", 3);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(has_no_consecutive_group_numbers(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 1),
+            Person::new("Daughter", 3),
+        ];
+        assert!(has_no_consecutive_group_numbers(&participants));
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_false() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 2);
-        let person3 = Person::new("Son", 2);
-        let person4 = Person::new("Daughter", 3);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(!has_no_consecutive_group_numbers(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 2),
+            Person::new("Daughter", 3),
+        ];
+        assert!(!has_no_consecutive_group_numbers(&participants));
     }
 
     #[test]
     fn test_is_gift_circle_valid_true() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 2);
-        let person3 = Person::new("Son", 1);
-        let person4 = Person::new("Daughter", 3);
-        let gift_circle = vec![person1, person2, person3, person4];
-        assert!(is_gift_circle_valid(&gift_circle));
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 1),
+            Person::new("Daughter", 3),
+        ];
+        assert!(is_gift_circle_valid(&participants));
     }
 
     #[test]
@@ -298,13 +306,12 @@ mod tests {
 
     #[test]
     fn test_get_gift_circle() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-        let person4 = Person::new("Daughter", 2);
-
-        let participants = vec![person1, person2, person3, person4];
-
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+            Person::new("Daughter", 2),
+        ];
         if let Ok(gift_circle) = get_gift_circle(participants) {
             assert_eq!(gift_circle.len(), 4);
         }
@@ -313,25 +320,23 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_circle_errors_with_too_few_entries() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-
-        let participants = vec![person1, person2, person3];
-
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+        ];
         get_gift_circle(participants).unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_get_gift_circle_errors_with_duplicate_names() {
-        let person1 = Person::new("Father", 1);
-        let person2 = Person::new("Mother", 1);
-        let person3 = Person::new("Son", 2);
-        let person4 = Person::new("Father", 3);
-
-        let participants = vec![person1, person2, person3, person4];
-
+        let participants = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+            Person::new("Father", 3),
+        ];
         get_gift_circle(participants).unwrap();
     }
 }
