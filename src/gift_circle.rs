@@ -166,10 +166,7 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
         }
     }
 
-    println!(
-        "#INFO: Found valid gift circle in {} attempts",
-        attempt_count
-    );
+    eprintln!("#INFO: Found valid gift circle in {attempt_count} attempts");
 
     Ok(gift_circle)
 }
