@@ -13,6 +13,8 @@ use myargs::get_args;
 use person::Person;
 
 fn run() -> Result<()> {
+    // adding this comment to test github action
+
     let args = get_args();
 
     let mut rdr = csv::Reader::from_path(args.input.clone())
