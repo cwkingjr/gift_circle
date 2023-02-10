@@ -2,13 +2,57 @@
 
 ## Expanation
 
-The gift_circle software reads a CSV file of gift circle participants and generates gift assignments where each particiant will be assigned a person to get a gift for that is not within their own group.
+The gift_circle software reads a CSV file of gift circle participants and generates gift-recipient assignments.
 
-The groups are assumed to be family groups where it would be difficult to purchase a gift for someone in that group and still keep it a secret given the proximity and exposure of the people in that group.
+You can use it to generate a simple list of recipients where no groups are involved, or you can use groups where each particiant will be assigned a person to get a gift for that is not within their own group.
+
+The groups are assumed to be family groups where it would be difficult to purchase a gift for someone in that group and still keep it a secret given the proximity and exposure of the people in that group. You must invoke the -u/--use_groups flag to cause the program to use groups. If the flag is not invoked, it assumes no groups and randomly picks a recipent based upon everyone not previously picked.
+
+The input file must be in UTF-8 or UTF-8-compatible encoding (e.g., ASCII is UTF-8 compatible, but Latin-1 is not).
+
+### Not Using Groups
+
+- Set up a plain CSV file with a header row and data rows, ensuring there is data for each column. You must use these exact column names, but you can choose to use either name only or name and email-address. All names must be unique and email-address is simply passed through to the output CSV. See `example-participants-without-groups.csv` for the format.
+
+  -- name
+
+  -- name,email_address
+- Invoke the program with the input file location, using the short or long option format. See the available options using -h/--help).
+
+#### Invoking Without Groups
+
+```shell
+./gift_circle -i=path/to/participants.csv
+./gift_circle --input=./participants.csv
+```
+
+```shell
+#INFO: Found valid gift circle NOT USING groups in 1 attempts
+name,email_address,assigned_person_name
+Jane Hill,,Jack Brown
+Jack Brown,,Joe Hill
+Joe Hill,,Daisy Jones
+Daisy Jones,,Bill Jones
+Bill Jones,,Beverly Jones
+Beverly Jones,,Kenya Hill
+Kenya Hill,,Jessica Brown
+Jessica Brown,,Billy Jones
+Billy Jones,,Jane Hill
+```
+
+The output will include a column for email_address whether or not you include it. This is simply to allow you to include it or not in the input file.
+
+You can redirect the output to a file using shell redirection. You might want to choose this since some information is written to stderr during processing and redirecting stdout to a file will exclude that processing info from your final output.
+
+```shell
+./gift_circle -i=path/to/participants.csv > gift-assignments.csv
+```
+
+### Using Groups
 
 Given that it is impossible to build a gift circle for certain combinations of groups, this software will make an initial determination of whether it's possible to proceed based upon whether the count of folks in the largest group, times two, is less than or equal to the total number of participants provided.
 
-The format of the CSV must be as below, with this exact header row, with file in UTF-8 or UTF-8 compatible encoding (e.g., ASCII is UTF-8 compatible, but Latin-1 is not).
+The format of the CSV must be as below, with this exact header row. You can leave out the email_address header and column info (along with its delimiting comma) if desired.
 
 ```shell
 name,email_address,group_number
@@ -23,13 +67,12 @@ Billy Jones,billy.jones@example.com,3
 Daisy Jones,daisy.jones@example.com,3
 ```
 
-## Use
+#### Invoking With Groups
 
 ```shell
-./gift_circle --help
-./gift_circle -i=path/to/participants.csv
-./gift_circle --input=./participants.csv
-./gift_circle -i=./participants.csv > ./gift-assignments.csv
+./gift_circle -u -i=path/to/participants.csv
+./gift_circle --use-groups --input=./participants.csv
+./gift_circle -u -i=./participants.csv > ./gift-assignments.csv
 ```
 
 The software will read the participants file, create a gift circle using those participants, and output a new CSV to stdout that includes a new column (assigned_person_name) showing the person they are assigned to get a gift for.
@@ -37,7 +80,7 @@ The software will read the participants file, create a gift circle using those p
 Here is an example output. Note the order of the group numbers.
 
 ```shell
-#INFO: Found valid gift circle in 2 attempts
+#INFO: Found valid gift circle USING groups in 2 attempts
 name,email_address,group_number,assigned_person_name
 Jack Brown,jack.brown@example.com,2,Joe Hill
 Joe Hill,joe.hill@example.com,1,Beverly Jones
@@ -52,42 +95,17 @@ Daisy Jones,daisy.jones@example.com,3,Jack Brown
 
 ### Arrow Print
 
-If you want to add a line to the output that shows only the names of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
+If you want to add a line to the stderr output that shows only the names of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
 
 ```shell
-#INFO: Found valid gift circle in 3 attempts
 #Jessica Brown -> Bill Jones -> Kenya Hill -> Jack Brown -> Daisy Jones -> Joe Hill -> Billy Jones -> Jane Hill -> Beverly Jones -> Jessica Brown
-name,email_address,group_number,assigned_person_name
-Jessica Brown,jessica.brown@example.com,2,Bill Jones
-Bill Jones,bill.jones@example.com,3,Kenya Hill
-Kenya Hill,kenya.hill@example.com,1,Jack Brown
-Jack Brown,jack.brown@example.com,2,Daisy Jones
-Daisy Jones,daisy.jones@example.com,3,Joe Hill
-Joe Hill,joe.hill@example.com,1,Billy Jones
-Billy Jones,billy.jones@example.com,3,Jane Hill
-Jane Hill,jane.hill@example.com,1,Beverly Jones
-Beverly Jones,bev.jones@example.com,3,Jessica Brown
 ```
 
-## Code
+The arrow output option works while using groups or without groups.
 
-This code was written and compiled on an Intel-based MacBook Pro (Ventura 13.0.1). If you have an Intel MacBook , you should be able to download the gift_cirle binary that is attached to the GitHub release, modify the permissions to make it executable (chmod +x gift_circle), and invoke it against your participants file as shown above.
+#### Invoking With Arrow Print
 
-If you have a different machine, you can install Rust for your machine, download the repo (git clone) or source code to your machine, and compile it from the repo folder: `cargo build --release`. You can also run these:
-
-```sh
-cargo test
-cargo run -- --help
-cargo run -- --i=./src/example-participants.csv
-cargo run --  -a -i=./src/example-participants.csv
-cargo build
-./target/debug/gift_circle --i=./src/example-participants.csv
-```
-
-Once the gift_circle binary is moved into your path (e.g., /usr/bin/gift_circle), of course you may invoke it like this:
-
-```sh
-gift_circle -h
-gift_circle -i=./example-participants.csv
-gift_circle -a -i=~./my-participants.csv
+```shell
+./gift_circle -a -i=path/to/participants.csv
+./gift_circle --arrow-print -i=path/to/participants.csv
 ```

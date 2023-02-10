@@ -8,7 +8,7 @@ use super::person::Person;
 fn largest_group(persons: &[Person]) -> Group {
     let group_counter = persons
         .iter()
-        .map(|p| p.group_number)
+        .map(|p| p.group_number.unwrap())
         .collect::<Counter<_>>()
         .most_common_ordered();
     Group::new(group_counter[0].0, group_counter[0].1 as u16)
@@ -17,11 +17,11 @@ fn largest_group(persons: &[Person]) -> Group {
 fn largest_non_prev_group(persons: &[Person], previous_group: u16) -> Group {
     let group_counter = persons
         .iter()
-        .filter(|p| p.group_number != previous_group)
+        .filter(|p| p.group_number.unwrap() != previous_group)
         .map(|p| p.group_number)
         .collect::<Counter<_>>()
         .most_common_ordered();
-    Group::new(group_counter[0].0, group_counter[0].1 as u16)
+    Group::new(group_counter[0].0.unwrap(), group_counter[0].1 as u16)
 }
 
 fn has_possible_hamiltonian_path(persons: &[Person]) -> bool {
@@ -43,8 +43,8 @@ fn get_duplicate_names(persons: &[Person]) -> Vec<String> {
 fn first_and_last_groups_are_different(persons: &[Person]) -> bool {
     // Last person gives gift to first person so can't be in the same group.
 
-    let first_group = persons.first().unwrap().group_number;
-    let last_group = persons.last().unwrap().group_number;
+    let first_group = persons.first().unwrap().group_number.unwrap();
+    let last_group = persons.last().unwrap().group_number.unwrap();
 
     first_group != last_group
 }
@@ -52,10 +52,10 @@ fn first_and_last_groups_are_different(persons: &[Person]) -> bool {
 fn has_no_consecutive_group_numbers(persons: &[Person]) -> bool {
     let mut previous_group: u16 = 0;
     for person in persons.iter() {
-        if person.group_number == previous_group {
+        if person.group_number.unwrap() == previous_group {
             return false;
         }
-        previous_group = person.group_number;
+        previous_group = person.group_number.unwrap();
     }
     true
 }
@@ -92,14 +92,14 @@ fn generate_path(from_persons: &[Person]) -> Vec<Person> {
                 // Build candidates list from the remaining persons in the largest group that is not the previous group
                 available_persons
                     .iter()
-                    .filter(|&p| p.group_number == largest_np_group.number)
+                    .filter(|&p| p.group_number.unwrap() == largest_np_group.number)
                     .cloned()
                     .collect::<Vec<Person>>()
             } else {
                 // Build the candidates list from all remaining persons not in the previous group
                 available_persons
                     .iter()
-                    .filter(|&p| p.group_number != previous_group)
+                    .filter(|&p| p.group_number.unwrap() != previous_group)
                     .cloned()
                     .collect::<Vec<Person>>()
             };
@@ -110,13 +110,36 @@ fn generate_path(from_persons: &[Person]) -> Vec<Person> {
         // Move the selected person from the available list to the path list
         move_person(&mut available_persons, &mut persons_path, choice);
 
-        previous_group = choice.group_number;
+        previous_group = choice.group_number.unwrap();
     }
 
     persons_path
 }
 
-pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
+fn generate_no_group_path(from_persons: &[Person]) -> Vec<Person> {
+    // Go through the list of available participants and generate a gift path.
+
+    // Preserve the from_persons vec for follow on attempts by working with a cloned vec
+    let mut available_persons: Vec<Person> = from_persons.to_owned();
+
+    // Build up the path by adding random persons
+    let mut persons_path: Vec<Person> = vec![];
+
+    while !available_persons.is_empty() {
+        // Randomly select one person
+        let choice = available_persons
+            .choose(&mut rand::thread_rng())
+            .unwrap()
+            .clone();
+
+        // Move the selected person from the available list to the path list
+        move_person(&mut available_persons, &mut persons_path, &choice);
+    }
+
+    persons_path
+}
+
+pub fn get_gift_circle(from_persons: Vec<Person>, use_groups: bool) -> Result<Vec<Person>> {
     if from_persons.len() <= 2 {
         return Err(anyhow!(
             "You must submit at least three people in order to form a gift circle."
@@ -128,11 +151,13 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
         return Err(anyhow!("Found duplicate names: {:#?}", duplicates));
     }
 
-    let possible_path = has_possible_hamiltonian_path(&from_persons);
-    if !possible_path {
-        return Err(anyhow!(
-            "Sorry, no possible hamiltonian path with this set of groups."
-        ));
+    if use_groups {
+        let possible_path = has_possible_hamiltonian_path(&from_persons);
+        if !possible_path {
+            return Err(anyhow!(
+                "Sorry, no possible hamiltonian path with this set of groups."
+            ));
+        }
     }
 
     const MAX_ATTEMPTS: u16 = 100;
@@ -142,9 +167,16 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
     let mut gift_circle: Vec<Person> = vec![];
 
     while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
-        gift_circle = generate_path(&from_persons);
-        if is_gift_circle_valid(&gift_circle) {
-            have_valid_circle = true;
+        if use_groups {
+            gift_circle = generate_path(&from_persons);
+            if is_gift_circle_valid(&gift_circle) {
+                have_valid_circle = true;
+            }
+        } else {
+            gift_circle = generate_no_group_path(&from_persons);
+            if from_persons.len() == gift_circle.len() {
+                have_valid_circle = true;
+            }
         }
         attempt_count += 1;
     }
@@ -166,26 +198,18 @@ pub fn get_gift_circle(from_persons: Vec<Person>) -> Result<Vec<Person>> {
         }
     }
 
-    eprintln!("#INFO: Found valid gift circle in {attempt_count} attempts");
+    if use_groups {
+        eprintln!("#INFO: Found valid gift circle USING groups in {attempt_count} attempts");
+    } else {
+        eprintln!("#INFO: Found valid gift circle NOT USING groups in {attempt_count} attempts");
+    }
 
     Ok(gift_circle)
 }
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
-
-    impl Person {
-        pub fn new(name: &str, group_number: u16) -> Self {
-            Person {
-                name: name.to_string(),
-                email_address: format!("{}@example.com", &name),
-                group_number,
-                ..Default::default()
-            }
-        }
-    }
 
     #[test]
     fn test_largest_group() {
@@ -305,14 +329,27 @@ mod tests {
     }
 
     #[test]
-    fn test_get_gift_circle() {
+    fn test_get_gift_circle_using_groups() {
         let participants = vec![
             Person::new("Father", 1),
             Person::new("Mother", 1),
             Person::new("Son", 2),
             Person::new("Daughter", 2),
         ];
-        if let Ok(gift_circle) = get_gift_circle(participants) {
+        if let Ok(gift_circle) = get_gift_circle(participants, true) {
+            assert_eq!(gift_circle.len(), 4);
+        }
+    }
+
+    #[test]
+    fn test_get_gift_circle_not_using_groups() {
+        let participants = vec![
+            Person::new_no_group("Father"),
+            Person::new_no_group("Mother"),
+            Person::new_no_group("Son"),
+            Person::new_no_group("Daughter"),
+        ];
+        if let Ok(gift_circle) = get_gift_circle(participants, false) {
             assert_eq!(gift_circle.len(), 4);
         }
     }
@@ -325,7 +362,7 @@ mod tests {
             Person::new("Mother", 1),
             Person::new("Son", 2),
         ];
-        get_gift_circle(participants).unwrap();
+        get_gift_circle(participants, true).unwrap();
     }
 
     #[test]
@@ -337,6 +374,6 @@ mod tests {
             Person::new("Son", 2),
             Person::new("Father", 3),
         ];
-        get_gift_circle(participants).unwrap();
+        get_gift_circle(participants, true).unwrap();
     }
 }

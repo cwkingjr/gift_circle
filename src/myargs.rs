@@ -1,6 +1,6 @@
 use clap::Parser;
 
-/// Program to generate randowm gift circle from folks outside recipient's group
+/// Program to generate random gift assignments, with or without groups.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
@@ -9,6 +9,8 @@ pub struct Args {
     pub input: String,
     #[clap(long, short, action)]
     pub arrow_print: bool,
+    #[clap(long, short, action)]
+    pub use_groups: bool,
 }
 
 pub fn get_args() -> Args {

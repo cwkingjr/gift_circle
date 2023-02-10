@@ -6,11 +6,11 @@ mod person;
 use std::io;
 use std::process;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 
 use gift_circle::get_gift_circle;
 use myargs::get_args;
-use person::Person;
+use person::{Person, PersonWithoutGroup};
 
 fn run() -> Result<()> {
     let args = get_args();
@@ -25,7 +25,19 @@ fn run() -> Result<()> {
         participants.push(person);
     }
 
-    let gift_circle = get_gift_circle(participants)?;
+    #[allow(unused_assignments)]
+    let mut gift_circle: Vec<Person> = vec![];
+
+    if args.use_groups {
+        if participants.iter().any(|p| p.group_number.is_none()) {
+            return Err(anyhow!(
+                "When using groups each participant must have a group assinged!"
+            ));
+        }
+        gift_circle = get_gift_circle(participants, true)?;
+    } else {
+        gift_circle = get_gift_circle(participants, false)?;
+    }
 
     if args.arrow_print {
         let mut names = gift_circle
@@ -40,8 +52,15 @@ fn run() -> Result<()> {
     }
 
     let mut wtr = csv::Writer::from_writer(io::stdout());
-    for person in gift_circle {
-        wtr.serialize(person)?;
+
+    if args.use_groups {
+        for person in gift_circle {
+            wtr.serialize(person)?;
+        }
+    } else {
+        for person in gift_circle {
+            wtr.serialize(PersonWithoutGroup::from(person))?;
+        }
     }
     Ok(wtr.flush()?)
 }
