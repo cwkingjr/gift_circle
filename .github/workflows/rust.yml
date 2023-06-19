@@ -24,4 +24,4 @@ jobs:
       - name: Clippy
         run: cargo-clippy --verbose -- -D warnings
       - name: Audit
-        run: cargo-audit
+        run: cargo audit
