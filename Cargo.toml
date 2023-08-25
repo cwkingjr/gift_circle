@@ -1,6 +1,6 @@
 [package]
 name = "gift_circle"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2021"
 authors = ["Chuck King"]
 
@@ -11,8 +11,8 @@ csv = "1.2"
 counter = "0.5.7"
 rand = "0.8.5"
 serde = { version = "1", features = ["derive"] }
-clap = { version = "4.3.2", features = ["derive"] }
-anyhow = "1.0.71"
+clap = { version = "4.4.0", features = ["derive"] }
+anyhow = "1.0.75"
 
 [dev-dependencies]
-cargo-audit = { version="0.17.6", features = ["fix"]}
+cargo-audit = { version = "0.17.6", features = ["fix"] }
