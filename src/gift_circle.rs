@@ -1,3 +1,5 @@
+use std::u16;
+
 use anyhow::{anyhow, Result};
 use counter::Counter;
 use rand::seq::SliceRandom;
@@ -6,38 +8,42 @@ use super::group::Group;
 use super::person::Person;
 
 fn largest_group(persons: &[Person]) -> Group {
-    let group_counter = persons
+    let largest = persons
         .iter()
         .map(|p| p.group_number.unwrap())
-        .collect::<Counter<_>>()
-        .most_common_ordered();
-    Group::new(group_counter[0].0, group_counter[0].1 as u16)
+        .collect::<Counter<_>>() // gets the count per group number
+        .most_common_ordered()[0]; // grab the largest group by count
+    let g_number = largest.0;
+    let g_size = largest.1 as u16;
+    Group::new(g_number, g_size)
 }
 
 fn largest_non_prev_group(persons: &[Person], previous_group: u16) -> Group {
-    let group_counter = persons
+    let largest = persons
         .iter()
         .filter(|p| p.group_number.unwrap() != previous_group)
         .map(|p| p.group_number)
         .collect::<Counter<_>>()
-        .most_common_ordered();
-    Group::new(group_counter[0].0.unwrap(), group_counter[0].1 as u16)
+        .most_common_ordered()[0];
+    let g_number = largest.0.unwrap();
+    let g_size = largest.1 as u16;
+    Group::new(g_number, g_size)
 }
 
 fn has_possible_hamiltonian_path(persons: &[Person]) -> bool {
     (largest_group(persons).size as usize * 2) <= persons.len()
 }
 
-fn get_duplicate_names(persons: &[Person]) -> Vec<String> {
-    let duplicates = persons
+fn get_duplicated_names(persons: &[Person]) -> Vec<String> {
+    let duplicated_names = persons
         .iter()
         .map(|p| p.name.clone())
         .collect::<Counter<_>>()
         .iter()
-        .filter(|(_, v)| **v as u32 > 1)
-        .map(|(k, _)| k.clone())
+        .filter(|(_, the_name_count)| **the_name_count > 1)
+        .map(|(the_name, _)| the_name.clone())
         .collect();
-    duplicates
+    duplicated_names
 }
 
 fn first_and_last_groups_are_different(persons: &[Person]) -> bool {
@@ -146,7 +152,7 @@ pub fn get_gift_circle(from_persons: Vec<Person>, use_groups: bool) -> Result<Ve
         ));
     }
 
-    let duplicates: Vec<String> = get_duplicate_names(&from_persons);
+    let duplicates: Vec<String> = get_duplicated_names(&from_persons);
     if !duplicates.is_empty() {
         return Err(anyhow!("Found duplicate names: {:#?}", duplicates));
     }
@@ -260,7 +266,7 @@ mod tests {
     #[test]
     fn test_get_duplicate_names() {
         let participants = vec![Person::new("Mother", 1), Person::new("Mother", 1)];
-        assert_eq!(get_duplicate_names(&participants).len(), 1);
+        assert_eq!(get_duplicated_names(&participants).len(), 1);
     }
 
     #[test]
