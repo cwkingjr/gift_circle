@@ -14,7 +14,8 @@ cargo build
 cargo run -- --help
 cargo run -- -u -i=./data/example-participants-with-groups.csv
 cargo run -- -i=./data/example-participants-without-groups.csv
-cargo run ./target/debug/gift_circle -u -i=./data/example-participants-with-groups.csv
+./target/debug/gift_circle -u -i=./data/example-participants-with-groups.csv
+./target/release/gift_circle -u -i=./data/example-participants-with-groups.csv
 ```
 
 Once the gift_circle binary is moved into your path (e.g., /usr/bin/gift_circle), of course you may invoke it like this:
