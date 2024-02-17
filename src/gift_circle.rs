@@ -158,6 +158,12 @@ pub fn get_gift_circle(from_persons: People, use_groups: bool) -> Result<People>
     }
 
     if use_groups {
+        if from_persons.iter().any(|p| p.group_number.is_none()) {
+            return Err(anyhow!(
+                "When using groups each participant must have a group assinged!"
+            ));
+        }
+
         let possible_path = has_possible_hamiltonian_path(&from_persons);
         if !possible_path {
             return Err(anyhow!(

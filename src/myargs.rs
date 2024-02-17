@@ -8,8 +8,6 @@ pub struct Args {
     #[arg(long, short)]
     pub input: String,
     #[clap(long, short, action)]
-    pub arrow_print: bool,
-    #[clap(long, short, action)]
     pub use_groups: bool,
 }
 

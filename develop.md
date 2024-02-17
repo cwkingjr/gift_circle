@@ -23,6 +23,6 @@ Once the gift_circle binary is moved into your path (e.g., /usr/bin/gift_circle)
 ```sh
 gift_circle -h
 gift_circle -i=./my-participants.csv
-gift_circle -a -i=~./my-participants.csv
-gift_circle -a -u -i=~./my-participants.csv
+gift_circle -i=~./my-participants.csv
+gift_circle -u -i=~./my-participants.csv
 ```
