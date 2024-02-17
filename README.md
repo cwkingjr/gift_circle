@@ -17,6 +17,7 @@ The input file must be in UTF-8 or UTF-8-compatible encoding (e.g., ASCII is UTF
   -- name
 
   -- name,email_address
+
 - Invoke the program with the input file location, using the short or long option format. See the available options using -h/--help).
 
 #### Invoking Without Groups
@@ -91,21 +92,4 @@ Jessica Brown,jessica.brown@example.com,2,Billy Jones
 Billy Jones,billy.jones@example.com,3,Kenya Hill
 Kenya Hill,kenya.hill@example.com,1,Daisy Jones
 Daisy Jones,daisy.jones@example.com,3,Jack Brown
-```
-
-### Arrow Print
-
-If you want to add a line to the stderr output that shows only the names of folks and who they are assigned to give a gift to, you may use the -a/--arrow-print flag. The -a flag output will look like this:
-
-```shell
-#Jessica Brown -> Bill Jones -> Kenya Hill -> Jack Brown -> Daisy Jones -> Joe Hill -> Billy Jones -> Jane Hill -> Beverly Jones -> Jessica Brown
-```
-
-The arrow output option works while using groups or without groups.
-
-#### Invoking With Arrow Print
-
-```shell
-./gift_circle -a -i=path/to/participants.csv
-./gift_circle --arrow-print -i=path/to/participants.csv
 ```
