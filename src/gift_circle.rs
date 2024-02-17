@@ -5,6 +5,7 @@ use counter::Counter;
 use rand::seq::SliceRandom;
 
 use super::group::Group;
+use super::people::People;
 use super::person::Person;
 
 fn largest_group(persons: &[Person]) -> Group {
@@ -70,20 +71,20 @@ fn is_gift_circle_valid(persons: &[Person]) -> bool {
     first_and_last_groups_are_different(persons) && has_no_consecutive_group_numbers(persons)
 }
 
-fn move_person(from_persons: &mut Vec<Person>, to_persons: &mut Vec<Person>, person: &Person) {
+fn move_person(from_persons: &mut People, to_persons: &mut People, person: &Person) {
     from_persons.retain(|p| p != person);
     to_persons.push(person.clone());
 }
 
-fn generate_path(from_persons: &[Person]) -> Vec<Person> {
+fn generate_path(from_persons: &[Person]) -> People {
     // Go through the list of available participants and generate a gift path
     // where noone gives a gift to anyone in their same group.
 
     // Preserve the from_persons vec for follow on attempts by working with a cloned vec
-    let mut available_persons: Vec<Person> = from_persons.to_owned();
+    let mut available_persons: People = from_persons.to_owned();
 
     // Build up the path by adding persons with different group numbers
-    let mut persons_path: Vec<Person> = vec![];
+    let mut persons_path: People = vec![];
 
     let mut previous_group: u16 = 0;
 
@@ -93,22 +94,21 @@ fn generate_path(from_persons: &[Person]) -> Vec<Person> {
 
         let largest_np_group = largest_non_prev_group(&available_persons, previous_group);
 
-        let candidates: Vec<Person> =
-            if (largest_np_group.size as usize * 2) > available_persons.len() {
-                // Build candidates list from the remaining persons in the largest group that is not the previous group
-                available_persons
-                    .iter()
-                    .filter(|&p| p.group_number.unwrap() == largest_np_group.number)
-                    .cloned()
-                    .collect::<Vec<Person>>()
-            } else {
-                // Build the candidates list from all remaining persons not in the previous group
-                available_persons
-                    .iter()
-                    .filter(|&p| p.group_number.unwrap() != previous_group)
-                    .cloned()
-                    .collect::<Vec<Person>>()
-            };
+        let candidates: People = if (largest_np_group.size as usize * 2) > available_persons.len() {
+            // Build candidates list from the remaining persons in the largest group that is not the previous group
+            available_persons
+                .iter()
+                .filter(|&p| p.group_number.unwrap() == largest_np_group.number)
+                .cloned()
+                .collect::<People>()
+        } else {
+            // Build the candidates list from all remaining persons not in the previous group
+            available_persons
+                .iter()
+                .filter(|&p| p.group_number.unwrap() != previous_group)
+                .cloned()
+                .collect::<People>()
+        };
 
         // Randomly select one person from the candidates list
         let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
@@ -122,14 +122,14 @@ fn generate_path(from_persons: &[Person]) -> Vec<Person> {
     persons_path
 }
 
-fn generate_no_group_path(from_persons: &[Person]) -> Vec<Person> {
+fn generate_no_group_path(from_persons: &[Person]) -> People {
     // Go through the list of available participants and generate a gift path.
 
     // Preserve the from_persons vec for follow on attempts by working with a cloned vec
-    let mut available_persons: Vec<Person> = from_persons.to_owned();
+    let mut available_persons: People = from_persons.to_owned();
 
     // Build up the path by adding random persons
-    let mut persons_path: Vec<Person> = vec![];
+    let mut persons_path: People = vec![];
 
     while !available_persons.is_empty() {
         // Randomly select one person
@@ -145,7 +145,7 @@ fn generate_no_group_path(from_persons: &[Person]) -> Vec<Person> {
     persons_path
 }
 
-pub fn get_gift_circle(from_persons: Vec<Person>, use_groups: bool) -> Result<Vec<Person>> {
+pub fn get_gift_circle(from_persons: People, use_groups: bool) -> Result<People> {
     if from_persons.len() <= 2 {
         return Err(anyhow!(
             "You must submit at least three people in order to form a gift circle."
@@ -170,7 +170,7 @@ pub fn get_gift_circle(from_persons: Vec<Person>, use_groups: bool) -> Result<Ve
     let mut attempt_count: u16 = 0;
 
     let mut have_valid_circle = false;
-    let mut gift_circle: Vec<Person> = vec![];
+    let mut gift_circle: People = vec![];
 
     while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
         if use_groups {
@@ -328,7 +328,7 @@ mod tests {
         let person1 = Person::new("Father", 1);
         let person_to_move = person1.clone();
         let mut move_from = vec![person1];
-        let mut move_to: Vec<Person> = vec![];
+        let mut move_to = vec![];
         move_person(&mut move_from, &mut move_to, &person_to_move);
         assert_eq!(move_from.len(), 0);
         assert_eq!(move_to.len(), 1);

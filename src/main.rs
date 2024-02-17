@@ -1,6 +1,7 @@
 mod gift_circle;
 mod group;
 mod myargs;
+mod people;
 mod person;
 
 use std::io;
@@ -10,6 +11,7 @@ use anyhow::{anyhow, Context, Result};
 
 use gift_circle::get_gift_circle;
 use myargs::get_args;
+use people::People;
 use person::{Person, PersonWithoutGroup};
 
 fn run() -> Result<()> {
@@ -18,7 +20,7 @@ fn run() -> Result<()> {
     let mut rdr = csv::Reader::from_path(args.input.clone())
         .with_context(|| format!("Failed to read input from {}", &args.input))?;
 
-    let mut participants: Vec<Person> = vec![];
+    let mut participants: People = vec![];
 
     for result in rdr.deserialize() {
         let person: Person = result?;
@@ -26,7 +28,7 @@ fn run() -> Result<()> {
     }
 
     #[allow(unused_assignments)]
-    let mut gift_circle: Vec<Person> = vec![];
+    let mut gift_circle: People = vec![];
 
     if args.use_groups {
         if participants.iter().any(|p| p.group_number.is_none()) {
