@@ -27,10 +27,7 @@ fn run() -> Result<()> {
         people.push(person);
     }
 
-    #[allow(unused_assignments)]
-    let mut gift_circle: People = vec![];
-
-    gift_circle = get_gift_circle(people, args.use_groups)?;
+    let gift_circle: People = get_gift_circle(people, args.use_groups)?;
 
     let mut wtr = csv::Writer::from_writer(io::stdout());
 
