@@ -206,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_gift_circle_valid_true() {
+    fn test_is_gift_circle_valid() {
         let people = vec![
             Person::new("Father", 1),
             Person::new("Mother", 2),
