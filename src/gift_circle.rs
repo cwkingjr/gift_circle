@@ -89,8 +89,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
             ));
         }
 
-        let possible_path = from_people.has_possible_hamiltonian_path();
-        if !possible_path {
+        if !from_people.has_possible_hamiltonian_path() {
             return Err(anyhow!(
                 "Sorry, no possible hamiltonian path with this set of groups."
             ));
@@ -109,7 +108,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
 
         if use_groups {
             gift_circle = generate_group_path(&mut available_people);
-            if gift_circle.is_gift_circle_valid() {
+            if gift_circle.is_valid_gift_circle() {
                 have_valid_circle = true;
             }
         } else {

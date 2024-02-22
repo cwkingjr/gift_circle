@@ -12,7 +12,7 @@ pub trait PeopleCycle {
     fn has_empty_group(&self) -> bool;
     fn has_no_consecutive_group_numbers(&self) -> bool;
     fn has_possible_hamiltonian_path(&self) -> bool;
-    fn is_gift_circle_valid(&self) -> bool;
+    fn is_valid_gift_circle(&self) -> bool;
     fn largest_group(&self) -> Group;
     fn largest_non_prev_group(&self, previous_group: u16) -> Group;
 }
@@ -81,7 +81,7 @@ impl PeopleCycle for People {
         true
     }
 
-    fn is_gift_circle_valid(&self) -> bool {
+    fn is_valid_gift_circle(&self) -> bool {
         self.first_and_last_groups_are_different() && self.has_no_consecutive_group_numbers()
     }
 }
@@ -213,6 +213,6 @@ mod tests {
             Person::new("Son", 1),
             Person::new("Daughter", 3),
         ];
-        assert!(people.is_gift_circle_valid());
+        assert!(people.is_valid_gift_circle());
     }
 }
