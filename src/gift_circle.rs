@@ -6,6 +6,7 @@ use rand::seq::SliceRandom;
 use super::people::{People, PeopleCycle};
 use super::person::Person;
 
+/// Move the person from the available/from list to the path/to list
 fn move_person(from_people: &mut People, to_people: &mut People, person: &Person) {
     from_people.retain(|p| p != person);
     to_people.push(person.clone());
@@ -45,7 +46,6 @@ fn generate_group_path(from_people: &mut People) -> People {
         // Randomly select one person from the candidates list
         let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
 
-        // Move the selected person from the available list to the path list
         move_person(from_people, &mut people_path, choice);
 
         previous_group = choice.group_number.unwrap();
@@ -70,6 +70,10 @@ fn generate_no_group_path(from_people: &mut People) -> People {
     people_path
 }
 
+/// Runs several validation checks on `from_people`, makes numerous attempts to generate
+/// a valid group or no group gift circle, returns a result with a valid gift circle
+/// (`People` with `assigned_person_name`'s populated) or an error,
+/// and stderr prints the number of attempts taken.
 pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> {
     if from_people.len() <= 2 {
         return Err(anyhow!(
@@ -89,32 +93,31 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
             ));
         }
 
-        let possible_path = from_people.has_possible_hamiltonian_path();
-        if !possible_path {
+        if !from_people.has_possible_hamiltonian_path() {
             return Err(anyhow!(
                 "Sorry, no possible hamiltonian path with this set of groups."
             ));
         }
     }
 
-    const MAX_ATTEMPTS: u16 = 100;
+    const MAX_ATTEMPTS: u16 = 500;
     let mut attempt_count: u16 = 0;
 
     let mut have_valid_circle = false;
-    let mut gift_circle: People = vec![];
+    let mut gift_path: People = vec![];
 
     while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
         // Preserve the from_people vec for follow on attempts by working with a cloned vec
         let mut available_people: People = from_people.to_owned();
 
         if use_groups {
-            gift_circle = generate_group_path(&mut available_people);
-            if gift_circle.is_gift_circle_valid() {
+            gift_path = generate_group_path(&mut available_people);
+            if gift_path.is_valid_gift_circle() {
                 have_valid_circle = true;
             }
         } else {
-            gift_circle = generate_no_group_path(&mut available_people);
-            if from_people.len() == gift_circle.len() {
+            gift_path = generate_no_group_path(&mut available_people);
+            if from_people.len() == gift_path.len() {
                 have_valid_circle = true;
             }
         }
@@ -128,15 +131,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
         ));
     }
 
-    let last_person_name = gift_circle.last().unwrap().name.clone();
-
-    for (i, person) in gift_circle.clone().iter().enumerate() {
-        if person.name == last_person_name {
-            gift_circle[i].assigned_person_name = Some(gift_circle[0].name.clone());
-        } else {
-            gift_circle[i].assigned_person_name = Some(gift_circle[i + 1].name.clone());
-        }
-    }
+    gift_path.assign_gift_recipients();
 
     if use_groups {
         eprintln!("#INFO: Found valid gift circle USING groups in {attempt_count} attempts");
@@ -144,7 +139,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
         eprintln!("#INFO: Found valid gift circle NOT USING groups in {attempt_count} attempts");
     }
 
-    Ok(gift_circle)
+    Ok(gift_path)
 }
 
 #[cfg(test)]

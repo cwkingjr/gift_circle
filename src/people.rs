@@ -7,17 +7,34 @@ use super::person::Person;
 pub type People = Vec<Person>;
 
 pub trait PeopleCycle {
+    fn assign_gift_recipients(&mut self);
     fn get_duplicated_names(&self) -> Vec<String>;
     fn first_and_last_groups_are_different(&self) -> bool;
     fn has_empty_group(&self) -> bool;
     fn has_no_consecutive_group_numbers(&self) -> bool;
     fn has_possible_hamiltonian_path(&self) -> bool;
-    fn is_gift_circle_valid(&self) -> bool;
+    fn is_valid_gift_circle(&self) -> bool;
     fn largest_group(&self) -> Group;
     fn largest_non_prev_group(&self, previous_group: u16) -> Group;
 }
 
 impl PeopleCycle for People {
+    /// Iterates through the contained Persons and sets their `assigned_person_name`
+    /// based upon their position in the vec. For example, the person at position 0 is assigned the name of the person
+    /// at position 1, person 1 is asssigned person 2, ..., person[last] is assigned the person at position 0.
+    fn assign_gift_recipients(&mut self) {
+        let last_person_name = self.last().unwrap().name.clone();
+
+        for (i, person) in self.clone().iter().enumerate() {
+            if person.name == last_person_name {
+                self[i].assigned_person_name = Some(self[0].name.clone());
+            } else {
+                self[i].assigned_person_name = Some(self[i + 1].name.clone());
+            }
+        }
+    }
+
+    ///Obtains the group assigned to the most people.
     fn largest_group(&self) -> Group {
         let largest = self
             .iter()
@@ -29,6 +46,7 @@ impl PeopleCycle for People {
         Group::new(g_number, g_size)
     }
 
+    ///Obtains the group assigned to the most people, excluding the group used last (previous group).
     fn largest_non_prev_group(&self, previous_group: u16) -> Group {
         let largest = self
             .iter()
@@ -41,10 +59,12 @@ impl PeopleCycle for People {
         Group::new(g_number, g_size)
     }
 
+    ///Checks that we pass hamiltonian path criteria.
     fn has_possible_hamiltonian_path(&self) -> bool {
         (self.largest_group().size as usize * 2) <= self.len()
     }
 
+    ///Determines if any person has an empty group assignment.
     fn has_empty_group(&self) -> bool {
         self.iter().any(|p| p.group_number.is_none())
     }
@@ -81,7 +101,7 @@ impl PeopleCycle for People {
         true
     }
 
-    fn is_gift_circle_valid(&self) -> bool {
+    fn is_valid_gift_circle(&self) -> bool {
         self.first_and_last_groups_are_different() && self.has_no_consecutive_group_numbers()
     }
 }
@@ -90,6 +110,26 @@ impl PeopleCycle for People {
 mod tests {
 
     use super::*;
+
+    #[test]
+    fn test_assign_gift_recipients() {
+        let mut people = vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 2),
+            Person::new("Son", 1),
+            Person::new("Daughter", 3),
+        ];
+        people.assign_gift_recipients();
+        let last_persons_assigned_name = people
+            .last()
+            .unwrap()
+            .to_owned()
+            .assigned_person_name
+            .unwrap();
+
+        let first_persons_name = people[0].name.clone();
+        assert!(last_persons_assigned_name == first_persons_name);
+    }
 
     #[test]
     fn test_largest_group() {
@@ -157,9 +197,15 @@ mod tests {
     }
 
     #[test]
-    fn test_get_duplicate_names() {
+    fn test_get_duplicate_names_one() {
         let people = vec![Person::new("Mother", 1), Person::new("Mother", 1)];
         assert_eq!(people.get_duplicated_names().len(), 1);
+    }
+
+    #[test]
+    fn test_get_duplicate_names_none() {
+        let people = vec![Person::new("Mother", 1), Person::new("Father", 1)];
+        assert_eq!(people.get_duplicated_names().len(), 0);
     }
 
     #[test]
@@ -206,13 +252,13 @@ mod tests {
     }
 
     #[test]
-    fn test_is_gift_circle_valid() {
+    fn test_is_valid_gift_circle() {
         let people = vec![
             Person::new("Father", 1),
             Person::new("Mother", 2),
             Person::new("Son", 1),
             Person::new("Daughter", 3),
         ];
-        assert!(people.is_gift_circle_valid());
+        assert!(people.is_valid_gift_circle());
     }
 }

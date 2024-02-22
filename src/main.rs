@@ -14,6 +14,8 @@ use myargs::get_args;
 use people::People;
 use person::Person;
 
+/// Processes args, reads the input csv file, generates gift circle,
+/// converts gift circle to output csv, and writes output csv to standard out.
 fn run() -> Result<()> {
     let args = get_args();
 
