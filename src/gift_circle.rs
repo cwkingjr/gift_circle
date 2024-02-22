@@ -11,34 +11,31 @@ fn move_person(from_people: &mut People, to_people: &mut People, person: &Person
     to_people.push(person.clone());
 }
 
-fn generate_path(from_people: &People) -> People {
+fn generate_group_path(from_people: &mut People) -> People {
     // Go through the list of available people and generate a gift path
     // where noone gives a gift to anyone in their same group.
-
-    // Preserve the from_people vec for follow on attempts by working with a cloned vec
-    let mut available_people: People = from_people.to_owned();
 
     // Build up the path by adding persons with different group numbers
     let mut people_path: People = vec![];
 
     let mut previous_group: u16 = 0;
 
-    while !available_people.is_empty() {
+    while !from_people.is_empty() {
         // If the largest group is half (or more) than the total remaining, we have
         // to pick someone from that group. Otherwise, pick randomly.
 
-        let largest_np_group = available_people.largest_non_prev_group(previous_group);
+        let largest_np_group = from_people.largest_non_prev_group(previous_group);
 
-        let candidates: People = if (largest_np_group.size as usize * 2) > available_people.len() {
+        let candidates: People = if (largest_np_group.size as usize * 2) > from_people.len() {
             // Build candidates list from the remaining persons in the largest group that is not the previous group
-            available_people
+            from_people
                 .iter()
                 .filter(|&p| p.group_number.unwrap() == largest_np_group.number)
                 .cloned()
                 .collect::<People>()
         } else {
             // Build the candidates list from all remaining persons not in the previous group
-            available_people
+            from_people
                 .iter()
                 .filter(|&p| p.group_number.unwrap() != previous_group)
                 .cloned()
@@ -49,7 +46,7 @@ fn generate_path(from_people: &People) -> People {
         let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
 
         // Move the selected person from the available list to the path list
-        move_person(&mut available_people, &mut people_path, choice);
+        move_person(from_people, &mut people_path, choice);
 
         previous_group = choice.group_number.unwrap();
     }
@@ -57,24 +54,17 @@ fn generate_path(from_people: &People) -> People {
     people_path
 }
 
-fn generate_no_group_path(from_people: &People) -> People {
+fn generate_no_group_path(from_people: &mut People) -> People {
     // Go through the list of available people and generate a gift path.
 
-    // Preserve the from_people vec for follow on attempts by working with a cloned vec
-    let mut available_people: People = from_people.to_owned();
-
-    // Build up the path by adding random persons
     let mut people_path: People = vec![];
 
-    while !available_people.is_empty() {
+    while !from_people.is_empty() {
         // Randomly select one person
-        let choice = available_people
-            .choose(&mut rand::thread_rng())
-            .unwrap()
-            .clone();
+        let choice = from_people.choose(&mut rand::thread_rng()).unwrap().clone();
 
         // Move the selected person from the available list to the path list
-        move_person(&mut available_people, &mut people_path, &choice);
+        move_person(from_people, &mut people_path, &choice);
     }
 
     people_path
@@ -95,7 +85,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
     if use_groups {
         if from_people.has_empty_group() {
             return Err(anyhow!(
-                "When using groups each participant must have a group assinged!"
+                "When using groups each participant must have a group assigned!"
             ));
         }
 
@@ -114,13 +104,16 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
     let mut gift_circle: People = vec![];
 
     while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
+        // Preserve the from_people vec for follow on attempts by working with a cloned vec
+        let mut available_people: People = from_people.to_owned();
+
         if use_groups {
-            gift_circle = generate_path(&from_people);
+            gift_circle = generate_group_path(&mut available_people);
             if gift_circle.is_gift_circle_valid() {
                 have_valid_circle = true;
             }
         } else {
-            gift_circle = generate_no_group_path(&from_people);
+            gift_circle = generate_no_group_path(&mut available_people);
             if from_people.len() == gift_circle.len() {
                 have_valid_circle = true;
             }
