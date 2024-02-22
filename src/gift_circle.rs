@@ -117,7 +117,6 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
             }
         } else {
             gift_path = generate_no_group_path(&mut available_people);
-            //todo!("need to check random path for circle");
             if from_people.len() == gift_path.len() {
                 have_valid_circle = true;
             }
