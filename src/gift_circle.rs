@@ -1,6 +1,6 @@
 use std::u16;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use rand::seq::SliceRandom;
 
 use super::people::{People, PeopleCycle};
@@ -76,28 +76,23 @@ fn generate_no_group_path(from_people: &mut People) -> People {
 /// and stderr prints the number of attempts taken.
 pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> {
     if from_people.len() <= 2 {
-        return Err(anyhow!(
-            "You must submit at least three people in order to form a gift circle."
-        ));
+        anyhow::bail!("You must submit at least three people in order to form a gift circle.");
     }
 
     let duplicates: Vec<String> = from_people.get_duplicated_names();
     if !duplicates.is_empty() {
-        return Err(anyhow!("Found duplicate names: {:#?}", duplicates));
+        anyhow::bail!("Found duplicate names: {:#?}", duplicates);
     }
 
     if use_groups {
         if from_people.has_empty_group() {
-            return Err(anyhow!(
-                "When using groups each participant must have a group assigned!"
-            ));
+            anyhow::bail!("When using groups each participant must have a group assigned!");
         }
 
-        if !from_people.has_possible_hamiltonian_path() {
-            return Err(anyhow!(
-                "Sorry, no possible hamiltonian path with this set of groups."
-            ));
-        }
+        anyhow::ensure!(
+            from_people.has_possible_hamiltonian_path(),
+            "Sorry, no possible hamiltonian path with this set of groups."
+        );
     }
 
     const MAX_ATTEMPTS: u16 = 500;
@@ -125,10 +120,10 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
     }
 
     if attempt_count == MAX_ATTEMPTS {
-        return Err(anyhow!(
+        anyhow::bail!(
             "Sorry, could not find gift circle in {} attempts",
             MAX_ATTEMPTS
-        ));
+        );
     }
 
     gift_path.assign_gift_recipients();
