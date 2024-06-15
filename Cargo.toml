@@ -1,6 +1,6 @@
 [package]
 name = "gift_circle"
-version = "0.11.5"
+version = "0.11.6"
 edition = "2021"
 authors = ["Chuck King"]
 description = "Generate gift exchange assignments where recipients are randomly picked from other family groups."
