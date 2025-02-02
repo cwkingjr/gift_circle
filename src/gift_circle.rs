@@ -1,5 +1,5 @@
 use anyhow::Result;
-use rand::seq::SliceRandom;
+use rand::prelude::IndexedRandom;
 
 use super::people::{People, PeopleCycle};
 use super::person::Person;
@@ -42,7 +42,7 @@ fn generate_group_path(from_people: &mut People) -> People {
         };
 
         // Randomly select one person from the candidates list
-        let choice = candidates.choose(&mut rand::thread_rng()).unwrap();
+        let choice = candidates.choose(&mut rand::rng()).unwrap();
 
         move_person(from_people, &mut people_path, choice);
 
@@ -59,7 +59,7 @@ fn generate_no_group_path(from_people: &mut People) -> People {
 
     while !from_people.is_empty() {
         // Randomly select one person
-        let choice = from_people.choose(&mut rand::thread_rng()).unwrap().clone();
+        let choice = from_people.choose(&mut rand::rng()).unwrap().clone();
 
         // Move the selected person from the available list to the path list
         move_person(from_people, &mut people_path, &choice);
