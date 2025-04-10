@@ -14,8 +14,8 @@ readme = "README.md"
 csv = "1.3.1"
 counter = "0.6.0"
 rand = "0.9.0"
-serde = { version = "1.0.218", features = ["derive"] }
-clap = { version = "4.5.31", features = ["derive"] }
+serde = { version = "1.0.219", features = ["derive"] }
+clap = { version = "4.5.35", features = ["derive"] }
 anyhow = "1.0.97"
 
 [dev-dependencies]
