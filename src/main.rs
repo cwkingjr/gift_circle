@@ -1,21 +1,10 @@
-mod gift_circle;
-mod group;
-mod myargs;
-mod people;
-mod person;
-
 use std::io;
 use std::process;
 
 use anyhow::{Context, Result};
 
-use gift_circle::get_gift_circle;
-use myargs::get_args;
-use people::People;
-use person::Person;
+use gift_circle::{get_gift_circle, myargs::get_args, People, Person};
 
-/// Processes args, reads the input csv file, generates gift circle,
-/// converts gift circle to output csv, and writes output csv to standard out.
 fn run() -> Result<()> {
     let args = get_args();
 
