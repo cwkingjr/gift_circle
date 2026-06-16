@@ -11,12 +11,10 @@ fn run() -> Result<()> {
     let mut rdr = csv::Reader::from_path(args.input.clone())
         .with_context(|| format!("Failed to read input from {}", &args.input))?;
 
-    let mut people: People = vec![];
-
-    for result in rdr.deserialize() {
-        let person: Person = result?;
-        people.push(person);
-    }
+    let people: People = rdr
+        .deserialize::<Person>()
+        .collect::<Result<Vec<Person>, _>>()?
+        .into();
 
     let gift_circle: People = get_gift_circle(people, args.use_groups)?;
 

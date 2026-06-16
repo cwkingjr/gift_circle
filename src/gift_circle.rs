@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rand::prelude::IndexedRandom;
 
-use super::people::{People, PeopleCycle};
+use super::people::People;
 use super::person::Person;
 
 /// Move the person from the available/from list to the path/to list
@@ -15,7 +15,7 @@ fn generate_group_path(from_people: &mut People) -> People {
     // where noone gives a gift to anyone in their same group.
 
     // Build up the path by adding persons with different group numbers
-    let mut people_path: People = vec![];
+    let mut people_path = People::default();
 
     let mut previous_group: u16 = 0;
 
@@ -55,7 +55,7 @@ fn generate_group_path(from_people: &mut People) -> People {
 fn generate_no_group_path(from_people: &mut People) -> People {
     // Go through the list of available people and generate a gift path.
 
-    let mut people_path: People = vec![];
+    let mut people_path = People::default();
 
     while !from_people.is_empty() {
         // Randomly select one person
@@ -97,7 +97,7 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
     let mut attempt_count: u16 = 0;
 
     let mut have_valid_circle = false;
-    let mut gift_path: People = vec![];
+    let mut gift_path = People::default();
 
     while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
         // Preserve the from_people vec for follow on attempts by working with a cloned vec
@@ -144,8 +144,8 @@ mod tests {
     fn test_move_person() {
         let person1 = Person::new("Father", 1);
         let person_to_move = person1.clone();
-        let mut move_from = vec![person1];
-        let mut move_to = vec![];
+        let mut move_from = People::from(vec![person1]);
+        let mut move_to = People::default();
         move_person(&mut move_from, &mut move_to, &person_to_move);
         assert_eq!(move_from.len(), 0);
         assert_eq!(move_to.len(), 1);
@@ -153,12 +153,12 @@ mod tests {
 
     #[test]
     fn test_get_gift_circle_using_groups() {
-        let people = vec![
+        let people = People::from(vec![
             Person::new("Father", 1),
             Person::new("Mother", 1),
             Person::new("Son", 2),
             Person::new("Daughter", 2),
-        ];
+        ]);
         if let Ok(gift_circle) = get_gift_circle(people, true) {
             assert_eq!(gift_circle.len(), 4);
         }
@@ -166,12 +166,12 @@ mod tests {
 
     #[test]
     fn test_get_gift_circle_not_using_groups() {
-        let people = vec![
+        let people = People::from(vec![
             Person::new_no_group("Father"),
             Person::new_no_group("Mother"),
             Person::new_no_group("Son"),
             Person::new_no_group("Daughter"),
-        ];
+        ]);
         if let Ok(gift_circle) = get_gift_circle(people, false) {
             assert_eq!(gift_circle.len(), 4);
         }
@@ -180,23 +180,23 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_get_gift_circle_errors_with_too_few_entries() {
-        let people = vec![
+        let people = People::from(vec![
             Person::new("Father", 1),
             Person::new("Mother", 1),
             Person::new("Son", 2),
-        ];
+        ]);
         get_gift_circle(people, true).unwrap();
     }
 
     #[test]
     #[should_panic]
     fn test_get_gift_circle_errors_with_duplicate_names() {
-        let people = vec![
+        let people = People::from(vec![
             Person::new("Father", 1),
             Person::new("Mother", 1),
             Person::new("Son", 2),
             Person::new("Father", 3),
-        ];
+        ]);
         get_gift_circle(people, true).unwrap();
     }
 }
