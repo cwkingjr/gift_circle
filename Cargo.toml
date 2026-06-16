@@ -16,6 +16,7 @@ counter = "0.6.0"
 rand = "0.9.0"
 serde = { version = "1.0.219", features = ["derive"] }
 clap = { version = "4.5.36", features = ["derive"] }
+thiserror = "2.0.12"
 anyhow = "1.0.98"
 
 [dev-dependencies]

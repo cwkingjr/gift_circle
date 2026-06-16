@@ -1,8 +1,8 @@
-use anyhow::Result;
 use rand::prelude::IndexedRandom;
 
-use super::people::People;
-use super::person::Person;
+use crate::error::{GiftCircleError, Result};
+use crate::people::People;
+use crate::person::Person;
 
 /// Move the person from the available/from list to the path/to list
 fn move_person(from_people: &mut People, to_people: &mut People, person: &Person) {
@@ -74,23 +74,24 @@ fn generate_no_group_path(from_people: &mut People) -> People {
 /// and stderr prints the number of attempts taken.
 pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> {
     if from_people.len() <= 2 {
-        anyhow::bail!("You must submit at least three people in order to form a gift circle.");
+        return Err(GiftCircleError::TooFewParticipants {
+            count: from_people.len(),
+        });
     }
 
-    let duplicates: Vec<String> = from_people.get_duplicated_names();
+    let duplicates = from_people.get_duplicated_names();
     if !duplicates.is_empty() {
-        anyhow::bail!("Found duplicate names: {:#?}", duplicates);
+        return Err(GiftCircleError::DuplicateNames(duplicates));
     }
 
     if use_groups {
         if from_people.has_empty_group() {
-            anyhow::bail!("When using groups each participant must have a group assigned!");
+            return Err(GiftCircleError::MissingGroup);
         }
 
-        anyhow::ensure!(
-            from_people.has_possible_hamiltonian_path(),
-            "Sorry, no possible hamiltonian path with this set of groups."
-        );
+        if !from_people.has_possible_hamiltonian_path() {
+            return Err(GiftCircleError::ImpossibleGroupLayout);
+        }
     }
 
     const MAX_ATTEMPTS: u16 = 500;
@@ -118,10 +119,9 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
     }
 
     if attempt_count == MAX_ATTEMPTS {
-        anyhow::bail!(
-            "Sorry, could not find gift circle in {} attempts",
-            MAX_ATTEMPTS
-        );
+        return Err(GiftCircleError::ExhaustedAttempts {
+            attempts: MAX_ATTEMPTS,
+        });
     }
 
     gift_path.assign_gift_recipients();
@@ -137,7 +137,6 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
     #[test]
@@ -178,18 +177,16 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_get_gift_circle_errors_with_too_few_entries() {
-        let people = People::from(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 2),
-        ]);
-        get_gift_circle(people, true).unwrap();
+        let people = People::from(vec![Person::new("Father", 1), Person::new("Mother", 1)]);
+        let err = get_gift_circle(people, true).unwrap_err();
+        assert!(matches!(
+            err,
+            GiftCircleError::TooFewParticipants { count: 2 }
+        ));
     }
 
     #[test]
-    #[should_panic]
     fn test_get_gift_circle_errors_with_duplicate_names() {
         let people = People::from(vec![
             Person::new("Father", 1),
@@ -197,6 +194,7 @@ mod tests {
             Person::new("Son", 2),
             Person::new("Father", 3),
         ]);
-        get_gift_circle(people, true).unwrap();
+        let err = get_gift_circle(people, true).unwrap_err();
+        assert!(matches!(err, GiftCircleError::DuplicateNames(_)));
     }
 }
