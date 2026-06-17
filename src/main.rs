@@ -1,39 +1,38 @@
-mod gift_circle;
-mod group;
-mod myargs;
-mod people;
-mod person;
-
 use std::io;
 use std::process;
 
 use anyhow::{Context, Result};
 
-use gift_circle::get_gift_circle;
-use myargs::get_args;
-use people::People;
-use person::Person;
+use gift_circle::{args::Args, generate, GiftMode, Participant, People};
 
-/// Processes args, reads the input csv file, generates gift circle,
-/// converts gift circle to output csv, and writes output csv to standard out.
 fn run() -> Result<()> {
-    let args = get_args();
+    let args = Args::parse_args();
 
-    let mut rdr = csv::Reader::from_path(args.input.clone())
-        .with_context(|| format!("Failed to read input from {}", &args.input))?;
+    let mut rdr = csv::Reader::from_path(&args.input)
+        .with_context(|| format!("Failed to read input from {}", args.input.display()))?;
 
-    let mut people: People = vec![];
+    let people: People = rdr
+        .deserialize::<Participant>()
+        .collect::<Result<Vec<Participant>, _>>()?
+        .into();
 
-    for result in rdr.deserialize() {
-        let person: Person = result?;
-        people.push(person);
+    let output = generate(&people, GiftMode::from(args.use_groups))?;
+
+    if output.used_groups {
+        eprintln!(
+            "#INFO: Found valid gift circle USING groups in {} attempts",
+            output.attempts
+        );
+    } else {
+        eprintln!(
+            "#INFO: Found valid gift circle NOT USING groups in {} attempts",
+            output.attempts
+        );
     }
-
-    let gift_circle: People = get_gift_circle(people, args.use_groups)?;
 
     let mut wtr = csv::Writer::from_writer(io::stdout());
 
-    for person in gift_circle {
+    for person in output.people {
         wtr.serialize(person)?;
     }
 
