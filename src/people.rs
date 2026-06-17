@@ -1,51 +1,58 @@
-use std::ops::{Deref, DerefMut};
-
-use counter::Counter;
+use std::collections::HashMap;
+use std::ops::Deref;
 
 use crate::error::{GiftCircleError, Result};
 use crate::group::Group;
+use crate::person::{Participant, Person};
 
-use super::person::Person;
-
+/// A collection of participants loaded from the input CSV.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct People(Vec<Person>);
+pub struct People(Vec<Participant>);
 
 /// Participants validated to have a group assignment on every member.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GroupedPeople(People);
 
 impl GroupedPeople {
-    pub fn try_new(people: People) -> Result<Self> {
-        if people.has_empty_group() {
-            return Err(GiftCircleError::MissingGroup);
+    pub(crate) fn group_at(people: &People, index: usize) -> u16 {
+        match people[index].group_number {
+            Some(group) => group,
+            None => unreachable!("GroupedPeople validates every participant has a group"),
         }
-        Ok(Self(people))
     }
 
-    pub(crate) fn person_group(person: &Person) -> u16 {
-        person
-            .group_number
-            .expect("GroupedPeople invariant: every participant has a group")
+    fn count_groups(groups: impl Iterator<Item = u16>) -> HashMap<u16, u16> {
+        let mut counts = HashMap::new();
+        for group in groups {
+            *counts.entry(group).or_insert(0) += 1;
+        }
+        counts
+    }
+
+    fn largest_group_from_counts(counts: &HashMap<u16, u16>) -> Option<Group> {
+        counts
+            .iter()
+            .max_by(|(left_num, left_size), (right_num, right_size)| {
+                left_size
+                    .cmp(right_size)
+                    .then_with(|| right_num.cmp(left_num))
+            })
+            .map(|(&number, &size)| Group::new(number, size))
     }
 
     pub fn largest_group(&self) -> Group {
-        let largest = self
-            .0
-            .iter()
-            .map(Self::person_group)
-            .collect::<Counter<_>>()
-            .most_common_ordered()[0];
-        Group::new(largest.0, largest.1 as u16)
+        let counts = Self::count_groups(self.0.iter().filter_map(|p| p.group_number));
+        Self::largest_group_from_counts(&counts).unwrap_or(Group::new(0, 0))
     }
 
     pub fn largest_non_prev_group(&self, previous_group: u16, remaining: &[usize]) -> Group {
-        let largest = remaining
-            .iter()
-            .map(|&i| Self::person_group(&self.0[i]))
-            .filter(|&g| g != previous_group)
-            .collect::<Counter<_>>()
-            .most_common_ordered()[0];
-        Group::new(largest.0, largest.1 as u16)
+        let counts = Self::count_groups(
+            remaining
+                .iter()
+                .filter_map(|&index| self.0[index].group_number)
+                .filter(|group| *group != previous_group),
+        );
+        Self::largest_group_from_counts(&counts).unwrap_or(Group::new(0, 0))
     }
 
     pub fn has_possible_hamiltonian_path(&self) -> bool {
@@ -53,19 +60,22 @@ impl GroupedPeople {
     }
 
     pub fn first_and_last_groups_are_different(&self, path: &[usize]) -> bool {
-        let first_group = Self::person_group(&self.0[path[0]]);
-        let last_group = Self::person_group(&self.0[*path.last().expect("non-empty path")]);
+        if path.is_empty() {
+            return false;
+        }
+        let first_group = Self::group_at(&self.0, path[0]);
+        let last_group = Self::group_at(&self.0, path[path.len() - 1]);
         first_group != last_group
     }
 
     pub fn has_no_consecutive_group_numbers(&self, path: &[usize]) -> bool {
-        let mut previous_group: u16 = 0;
+        let mut previous_group: Option<u16> = None;
         for &index in path {
-            let group = Self::person_group(&self.0[index]);
-            if group == previous_group {
+            let group = Self::group_at(&self.0, index);
+            if previous_group == Some(group) {
                 return false;
             }
-            previous_group = group;
+            previous_group = Some(group);
         }
         true
     }
@@ -73,6 +83,21 @@ impl GroupedPeople {
     pub fn is_valid_gift_circle(&self, path: &[usize]) -> bool {
         self.first_and_last_groups_are_different(path)
             && self.has_no_consecutive_group_numbers(path)
+    }
+}
+
+impl TryFrom<&People> for GroupedPeople {
+    type Error = GiftCircleError;
+
+    fn try_from(people: &People) -> Result<Self> {
+        if people.has_empty_group() {
+            return Err(GiftCircleError::MissingGroup);
+        }
+        let grouped = Self(people.clone());
+        if !grouped.has_possible_hamiltonian_path() {
+            return Err(GiftCircleError::ImpossibleGroupLayout);
+        }
+        Ok(grouped)
     }
 }
 
@@ -84,55 +109,78 @@ impl Deref for GroupedPeople {
     }
 }
 
-impl DerefMut for GroupedPeople {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 impl People {
-    pub fn assign_gift_recipients(&mut self) {
-        if self.0.is_empty() {
-            return;
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &Participant> {
+        self.0.iter()
+    }
+
+    pub fn get(&self, index: usize) -> Option<&Participant> {
+        self.0.get(index)
+    }
+
+    pub fn assign_from_path(&self, path: &[usize]) -> Vec<Person> {
+        if path.is_empty() {
+            return Vec::new();
         }
-        let first = self.0[0].name.clone();
-        for i in 0..self.0.len() - 1 {
-            self.0[i].assigned_person_name = Some(self.0[i + 1].name.clone());
-        }
-        self.0.last_mut().unwrap().assigned_person_name = Some(first);
+
+        path.iter()
+            .enumerate()
+            .map(|(position, &giver_index)| {
+                let recipient_index = path[(position + 1) % path.len()];
+                Person::from_assignment(&self.0[giver_index], self.0[recipient_index].name.clone())
+            })
+            .collect()
     }
 
     pub fn has_empty_group(&self) -> bool {
-        self.0.iter().any(|p| p.group_number.is_none())
-    }
-
-    pub fn get_duplicated_names(&self) -> Vec<String> {
         self.0
             .iter()
-            .map(|p| p.name.clone())
-            .collect::<Counter<_>>()
-            .iter()
-            .filter(|(_, the_name_count)| **the_name_count > 1)
-            .map(|(the_name, _)| the_name.clone())
-            .collect()
+            .any(|participant| participant.group_number.is_none())
+    }
+
+    pub fn duplicated_names(&self) -> Vec<String> {
+        let mut counts = HashMap::new();
+        for participant in &self.0 {
+            *counts.entry(participant.name.clone()).or_insert(0) += 1;
+        }
+
+        let mut duplicates: Vec<String> = counts
+            .into_iter()
+            .filter_map(|(name, count)| (count > 1).then_some(name))
+            .collect();
+        duplicates.sort_unstable();
+        duplicates
+    }
+
+    #[deprecated(note = "renamed to `duplicated_names`")]
+    pub fn get_duplicated_names(&self) -> Vec<String> {
+        self.duplicated_names()
     }
 }
 
-impl From<Vec<Person>> for People {
-    fn from(value: Vec<Person>) -> Self {
+impl From<Vec<Participant>> for People {
+    fn from(value: Vec<Participant>) -> Self {
         Self(value)
     }
 }
 
-impl FromIterator<Person> for People {
-    fn from_iter<I: IntoIterator<Item = Person>>(iter: I) -> Self {
+impl FromIterator<Participant> for People {
+    fn from_iter<I: IntoIterator<Item = Participant>>(iter: I) -> Self {
         Self(iter.into_iter().collect())
     }
 }
 
 impl IntoIterator for People {
-    type Item = Person;
-    type IntoIter = std::vec::IntoIter<Person>;
+    type Item = Participant;
+    type IntoIter = std::vec::IntoIter<Participant>;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0.into_iter()
@@ -140,91 +188,76 @@ impl IntoIterator for People {
 }
 
 impl Deref for People {
-    type Target = Vec<Person>;
+    type Target = [Participant];
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl DerefMut for People {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
 #[cfg(test)]
 mod tests {
-
     use super::*;
 
-    fn grouped(people: People) -> GroupedPeople {
-        GroupedPeople::try_new(people).expect("valid grouped fixture")
+    fn grouped_unchecked(people: People) -> GroupedPeople {
+        GroupedPeople(people)
     }
 
     #[test]
-    fn test_assign_gift_recipients() {
-        let mut people = People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 1),
-            Person::new("Daughter", 3),
+    fn test_assign_from_path() {
+        let people = People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 3),
         ]);
-        people.assign_gift_recipients();
-        let last_persons_assigned_name = people
-            .last()
-            .unwrap()
-            .to_owned()
-            .assigned_person_name
-            .unwrap();
-
-        let first_persons_name = people[0].name.clone();
-        assert!(last_persons_assigned_name == first_persons_name);
+        let assigned = people.assign_from_path(&[0, 1, 2, 3]);
+        assert_eq!(assigned.last().unwrap().assigned_person_name, "Father");
     }
 
     #[test]
     fn test_largest_group() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 2),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 2),
         ]));
-        assert_eq!(people.largest_group(), Group::new(1, 2u16));
+        assert_eq!(people.largest_group(), Group::new(1, 2));
     }
 
     #[test]
     fn test_largest_non_prev_group() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 2),
-            Person::new("Daughter", 2),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 2),
+            Participant::new("Daughter", 2),
         ]));
         let remaining: Vec<usize> = (0..people.len()).collect();
         assert_eq!(
             people.largest_non_prev_group(2, &remaining),
-            Group::new(1, 2u16)
+            Group::new(1, 2)
         );
     }
 
     #[test]
     fn test_has_possible_hamiltonian_path_true() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 2),
-            Person::new("Daughter", 3),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 2),
+            Participant::new("Daughter", 3),
         ]));
         assert!(people.has_possible_hamiltonian_path());
     }
 
     #[test]
     fn test_has_possible_hamiltonian_path_false() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 1),
-            Person::new("Daughter", 2),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 2),
         ]));
         assert!(!people.has_possible_hamiltonian_path());
     }
@@ -232,10 +265,10 @@ mod tests {
     #[test]
     fn test_has_empty_group_false() {
         let people = People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 1),
-            Person::new("Daughter", 2),
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 2),
         ]);
         assert!(!people.has_empty_group());
     }
@@ -243,77 +276,105 @@ mod tests {
     #[test]
     fn test_has_empty_group_true() {
         let people = People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 1),
-            Person::new("Son", 1),
-            Person::new_no_group("Daughter"),
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 1),
+            Participant::new_no_group("Daughter"),
         ]);
         assert!(people.has_empty_group());
     }
 
     #[test]
-    fn test_get_duplicate_names_one() {
-        let people = People(vec![Person::new("Mother", 1), Person::new("Mother", 1)]);
-        assert_eq!(people.get_duplicated_names().len(), 1);
+    fn test_duplicated_names_one() {
+        let people = People(vec![
+            Participant::new("Mother", 1),
+            Participant::new("Mother", 1),
+        ]);
+        assert_eq!(people.duplicated_names().len(), 1);
     }
 
     #[test]
-    fn test_get_duplicate_names_none() {
-        let people = People(vec![Person::new("Mother", 1), Person::new("Father", 1)]);
-        assert_eq!(people.get_duplicated_names().len(), 0);
+    fn test_duplicated_names_none() {
+        let people = People(vec![
+            Participant::new("Mother", 1),
+            Participant::new("Father", 1),
+        ]);
+        assert_eq!(people.duplicated_names().len(), 0);
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_true() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 1),
-            Person::new("Daughter", 3),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 3),
         ]));
         assert!(people.first_and_last_groups_are_different(&[0, 1, 2, 3]));
     }
 
     #[test]
     fn test_first_and_last_groups_are_different_false() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 1),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 1),
         ]));
         assert!(!people.first_and_last_groups_are_different(&[0, 1, 2]));
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_true() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 1),
-            Person::new("Daughter", 3),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 3),
         ]));
         assert!(people.has_no_consecutive_group_numbers(&[0, 1, 2, 3]));
     }
 
     #[test]
     fn test_has_no_consecutive_group_numbers_false() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 2),
-            Person::new("Daughter", 3),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 2),
+            Participant::new("Daughter", 3),
         ]));
         assert!(!people.has_no_consecutive_group_numbers(&[0, 1, 2, 3]));
     }
 
     #[test]
     fn test_is_valid_gift_circle() {
-        let people = grouped(People(vec![
-            Person::new("Father", 1),
-            Person::new("Mother", 2),
-            Person::new("Son", 1),
-            Person::new("Daughter", 3),
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 2),
+            Participant::new("Son", 1),
+            Participant::new("Daughter", 3),
         ]));
         assert!(people.is_valid_gift_circle(&[0, 1, 2, 3]));
+    }
+
+    #[test]
+    fn test_adjacent_groups_in_valid_circle_differ_including_wraparound() {
+        let people = grouped_unchecked(People(vec![
+            Participant::new("Father", 1),
+            Participant::new("Mother", 1),
+            Participant::new("Son", 2),
+            Participant::new("Daughter", 2),
+        ]));
+        let path = vec![0, 2, 1, 3];
+        assert!(people.is_valid_gift_circle(&path));
+        for window in path.windows(2) {
+            assert_ne!(
+                GroupedPeople::group_at(&people, window[0]),
+                GroupedPeople::group_at(&people, window[1])
+            );
+        }
+        assert_ne!(
+            GroupedPeople::group_at(&people, *path.last().unwrap()),
+            GroupedPeople::group_at(&people, path[0])
+        );
     }
 }

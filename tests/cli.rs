@@ -1,3 +1,5 @@
+#![allow(clippy::expect_used, clippy::unwrap_used)]
+
 use std::process::Command;
 
 #[test]
@@ -5,7 +7,8 @@ fn runs_without_groups_example_csv() {
     let output = Command::new(env!("CARGO_BIN_EXE_gift_circle"))
         .arg(format!(
             "-i={}",
-            env!("CARGO_MANIFEST_DIR").to_string() + "/data/example-participants-without-groups.csv"
+            env!("CARGO_MANIFEST_DIR").to_string()
+                + "/data/example-participants-without-groups.csv"
         ))
         .output()
         .expect("failed to run gift_circle binary");
@@ -32,7 +35,8 @@ fn runs_with_groups_example_csv() {
             "-u",
             &format!(
                 "-i={}",
-                env!("CARGO_MANIFEST_DIR").to_string() + "/data/example-participants-with-groups.csv"
+                env!("CARGO_MANIFEST_DIR").to_string()
+                    + "/data/example-participants-with-groups.csv"
             ),
         ])
         .output()

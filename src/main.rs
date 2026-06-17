@@ -3,24 +3,20 @@ use std::process;
 
 use anyhow::{Context, Result};
 
-use gift_circle::{args::Args, get_gift_circle, People, Person};
+use gift_circle::{args::Args, generate, GiftMode, Participant, People};
 
 fn run() -> Result<()> {
     let args = Args::parse_args();
 
-    let mut rdr = csv::Reader::from_path(&args.input).with_context(|| {
-        format!(
-            "Failed to read input from {}",
-            args.input.display()
-        )
-    })?;
+    let mut rdr = csv::Reader::from_path(&args.input)
+        .with_context(|| format!("Failed to read input from {}", args.input.display()))?;
 
     let people: People = rdr
-        .deserialize::<Person>()
-        .collect::<Result<Vec<Person>, _>>()?
+        .deserialize::<Participant>()
+        .collect::<Result<Vec<Participant>, _>>()?
         .into();
 
-    let output = get_gift_circle(people, args.use_groups)?;
+    let output = generate(&people, GiftMode::from(args.use_groups))?;
 
     if output.used_groups {
         eprintln!(
