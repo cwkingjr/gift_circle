@@ -8,8 +8,8 @@ pub struct Person {
     pub assigned_person_name: Option<String>,
 }
 
+#[cfg(test)]
 impl Person {
-    #[allow(dead_code)]
     pub fn new(name: &str, group_number: u16) -> Self {
         Person {
             name: name.to_string(),
@@ -18,7 +18,6 @@ impl Person {
         }
     }
 
-    #[allow(dead_code)]
     pub fn new_no_group(name: &str) -> Self {
         Person {
             name: name.to_string(),

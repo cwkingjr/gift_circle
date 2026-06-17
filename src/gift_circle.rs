@@ -1,78 +1,70 @@
-use rand::prelude::IndexedRandom;
+use rand::prelude::{Rng, SliceRandom};
 
 use crate::error::{GiftCircleError, Result};
-use crate::people::People;
-use crate::person::Person;
+use crate::people::{GroupedPeople, People};
 
-/// Move the person from the available/from list to the path/to list
-fn move_person(from_people: &mut People, to_people: &mut People, person: &Person) {
-    from_people.retain(|p| p != person);
-    to_people.push(person.clone());
+/// A successfully generated gift circle and metadata about how it was built.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GiftCircleOutput {
+    /// Participants in gift order with `assigned_person_name` populated.
+    pub people: People,
+    /// Number of random generation attempts required.
+    pub attempts: u16,
+    /// Whether group constraints were applied.
+    pub used_groups: bool,
 }
 
-fn generate_group_path(from_people: &mut People) -> People {
-    // Go through the list of available people and generate a gift path
-    // where noone gives a gift to anyone in their same group.
+fn path_from_indices(people: &People, path_indices: &[usize]) -> People {
+    path_indices
+        .iter()
+        .map(|&index| people[index].clone())
+        .collect::<People>()
+}
 
-    // Build up the path by adding persons with different group numbers
-    let mut people_path = People::default();
-
+fn generate_group_path(grouped: &GroupedPeople, rng: &mut impl Rng) -> (People, Vec<usize>) {
+    let people: &People = grouped;
+    let mut remaining: Vec<usize> = (0..people.len()).collect();
+    let mut path_indices = Vec::with_capacity(people.len());
     let mut previous_group: u16 = 0;
 
-    while !from_people.is_empty() {
-        // If the largest group is half (or more) than the total remaining, we have
-        // to pick someone from that group. Otherwise, pick randomly.
+    while !remaining.is_empty() {
+        let largest_np_group = grouped.largest_non_prev_group(previous_group, &remaining);
 
-        let largest_np_group = from_people.largest_non_prev_group(previous_group);
+        let candidate_indices: Vec<usize> =
+            if (largest_np_group.size as usize * 2) > remaining.len() {
+                remaining
+                    .iter()
+                    .copied()
+                    .filter(|&index| {
+                        GroupedPeople::person_group(&people[index]) == largest_np_group.number
+                    })
+                    .collect()
+            } else {
+                remaining
+                    .iter()
+                    .copied()
+                    .filter(|&index| GroupedPeople::person_group(&people[index]) != previous_group)
+                    .collect()
+            };
 
-        let candidates: People = if (largest_np_group.size as usize * 2) > from_people.len() {
-            // Build candidates list from the remaining persons in the largest group that is not the previous group
-            from_people
-                .iter()
-                .filter(|&p| p.group_number.unwrap() == largest_np_group.number)
-                .cloned()
-                .collect::<People>()
-        } else {
-            // Build the candidates list from all remaining persons not in the previous group
-            from_people
-                .iter()
-                .filter(|&p| p.group_number.unwrap() != previous_group)
-                .cloned()
-                .collect::<People>()
-        };
+        let choice_index =
+            candidate_indices[rng.random_range(0..candidate_indices.len())];
 
-        // Randomly select one person from the candidates list
-        let choice = candidates.choose(&mut rand::rng()).unwrap();
-
-        move_person(from_people, &mut people_path, choice);
-
-        previous_group = choice.group_number.unwrap();
+        previous_group = GroupedPeople::person_group(&people[choice_index]);
+        remaining.retain(|&index| index != choice_index);
+        path_indices.push(choice_index);
     }
 
-    people_path
+    (path_from_indices(people, &path_indices), path_indices)
 }
 
-fn generate_no_group_path(from_people: &mut People) -> People {
-    // Go through the list of available people and generate a gift path.
-
-    let mut people_path = People::default();
-
-    while !from_people.is_empty() {
-        // Randomly select one person
-        let choice = from_people.choose(&mut rand::rng()).unwrap().clone();
-
-        // Move the selected person from the available list to the path list
-        move_person(from_people, &mut people_path, &choice);
-    }
-
-    people_path
+fn generate_no_group_path(people: &People, rng: &mut impl Rng) -> People {
+    let mut path_indices: Vec<usize> = (0..people.len()).collect();
+    path_indices.shuffle(rng);
+    path_from_indices(people, &path_indices)
 }
 
-/// Runs several validation checks on `from_people`, makes numerous attempts to generate
-/// a valid group or no group gift circle, returns a result with a valid gift circle
-/// (`People` with `assigned_person_name`'s populated) or an error,
-/// and stderr prints the number of attempts taken.
-pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> {
+fn validate_people(from_people: &People, use_groups: bool) -> Result<Option<GroupedPeople>> {
     if from_people.len() <= 2 {
         return Err(GiftCircleError::TooFewParticipants {
             count: from_people.len(),
@@ -84,70 +76,105 @@ pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<People> 
         return Err(GiftCircleError::DuplicateNames(duplicates));
     }
 
+    if !use_groups {
+        return Ok(None);
+    }
+
+    let grouped = GroupedPeople::try_new(from_people.clone())?;
+    if !grouped.has_possible_hamiltonian_path() {
+        return Err(GiftCircleError::ImpossibleGroupLayout);
+    }
+
+    Ok(Some(grouped))
+}
+
+/// Generate a gift circle using the process default random number generator.
+///
+/// # Errors
+///
+/// Returns [`GiftCircleError`] when validation fails or no valid group circle is found.
+pub fn get_gift_circle(from_people: People, use_groups: bool) -> Result<GiftCircleOutput> {
+    get_gift_circle_with_rng(&from_people, use_groups, &mut rand::rng())
+}
+
+/// Generate a gift circle using the provided random number generator.
+///
+/// # Errors
+///
+/// Returns [`GiftCircleError`] when validation fails or no valid group circle is found.
+pub fn get_gift_circle_with_rng(
+    from_people: &People,
+    use_groups: bool,
+    rng: &mut impl Rng,
+) -> Result<GiftCircleOutput> {
+    let grouped = validate_people(from_people, use_groups)?;
+
     if use_groups {
-        if from_people.has_empty_group() {
-            return Err(GiftCircleError::MissingGroup);
-        }
+        const MAX_ATTEMPTS: u16 = 500;
+        let grouped = grouped.ok_or(GiftCircleError::MissingGroup)?;
+        let mut attempt_count: u16 = 0;
+        let mut gift_path = People::default();
 
-        if !from_people.has_possible_hamiltonian_path() {
-            return Err(GiftCircleError::ImpossibleGroupLayout);
-        }
-    }
-
-    const MAX_ATTEMPTS: u16 = 500;
-    let mut attempt_count: u16 = 0;
-
-    let mut have_valid_circle = false;
-    let mut gift_path = People::default();
-
-    while !have_valid_circle && attempt_count < MAX_ATTEMPTS {
-        // Preserve the from_people vec for follow on attempts by working with a cloned vec
-        let mut available_people: People = from_people.to_owned();
-
-        if use_groups {
-            gift_path = generate_group_path(&mut available_people);
-            if gift_path.is_valid_gift_circle() {
-                have_valid_circle = true;
-            }
-        } else {
-            gift_path = generate_no_group_path(&mut available_people);
-            if from_people.len() == gift_path.len() {
-                have_valid_circle = true;
+        while attempt_count < MAX_ATTEMPTS {
+            attempt_count += 1;
+            let (path, path_indices) = generate_group_path(&grouped, rng);
+            if grouped.is_valid_gift_circle(&path_indices) {
+                gift_path = path;
+                break;
             }
         }
-        attempt_count += 1;
-    }
 
-    if attempt_count == MAX_ATTEMPTS {
-        return Err(GiftCircleError::ExhaustedAttempts {
-            attempts: MAX_ATTEMPTS,
+        if gift_path.is_empty() {
+            return Err(GiftCircleError::ExhaustedAttempts {
+                attempts: MAX_ATTEMPTS,
+            });
+        }
+
+        gift_path.assign_gift_recipients();
+        return Ok(GiftCircleOutput {
+            people: gift_path,
+            attempts: attempt_count,
+            used_groups: true,
         });
     }
 
+    let mut gift_path = generate_no_group_path(from_people, rng);
     gift_path.assign_gift_recipients();
-
-    if use_groups {
-        eprintln!("#INFO: Found valid gift circle USING groups in {attempt_count} attempts");
-    } else {
-        eprintln!("#INFO: Found valid gift circle NOT USING groups in {attempt_count} attempts");
-    }
-
-    Ok(gift_path)
+    Ok(GiftCircleOutput {
+        people: gift_path,
+        attempts: 1,
+        used_groups: false,
+    })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use rand::rngs::StdRng;
+    use rand::SeedableRng;
 
-    #[test]
-    fn test_move_person() {
-        let person1 = Person::new("Father", 1);
-        let person_to_move = person1.clone();
-        let mut move_from = People::from(vec![person1]);
-        let mut move_to = People::default();
-        move_person(&mut move_from, &mut move_to, &person_to_move);
-        assert_eq!(move_from.len(), 0);
-        assert_eq!(move_to.len(), 1);
+    use super::*;
+    use crate::person::Person;
+
+    fn assert_valid_assignments(output: &GiftCircleOutput) {
+        let names: Vec<&str> = output.people.iter().map(|p| p.name.as_str()).collect();
+        let recipients: Vec<&str> = output
+            .people
+            .iter()
+            .map(|p| p.assigned_person_name.as_deref().unwrap())
+            .collect();
+
+        let mut sorted_names = names.clone();
+        let mut sorted_recipients = recipients;
+        sorted_names.sort_unstable();
+        sorted_recipients.sort_unstable();
+        assert_eq!(sorted_names, sorted_recipients);
+
+        for person in output.people.iter() {
+            assert_ne!(
+                person.assigned_person_name.as_deref(),
+                Some(person.name.as_str())
+            );
+        }
     }
 
     #[test]
@@ -158,9 +185,11 @@ mod tests {
             Person::new("Son", 2),
             Person::new("Daughter", 2),
         ]);
-        if let Ok(gift_circle) = get_gift_circle(people, true) {
-            assert_eq!(gift_circle.len(), 4);
-        }
+        let mut rng = StdRng::seed_from_u64(42);
+        let output = get_gift_circle_with_rng(&people, true, &mut rng).expect("valid fixture");
+        assert_eq!(output.people.len(), 4);
+        assert!(output.used_groups);
+        assert_valid_assignments(&output);
     }
 
     #[test]
@@ -171,9 +200,27 @@ mod tests {
             Person::new_no_group("Son"),
             Person::new_no_group("Daughter"),
         ]);
-        if let Ok(gift_circle) = get_gift_circle(people, false) {
-            assert_eq!(gift_circle.len(), 4);
-        }
+        let mut rng = StdRng::seed_from_u64(7);
+        let output = get_gift_circle_with_rng(&people, false, &mut rng).expect("valid fixture");
+        assert_eq!(output.people.len(), 4);
+        assert_eq!(output.attempts, 1);
+        assert!(!output.used_groups);
+        assert_valid_assignments(&output);
+    }
+
+    #[test]
+    fn test_get_gift_circle_is_reproducible_with_seeded_rng() {
+        let people = People::from(vec![
+            Person::new("Father", 1),
+            Person::new("Mother", 1),
+            Person::new("Son", 2),
+            Person::new("Daughter", 2),
+        ]);
+        let mut rng_a = StdRng::seed_from_u64(99);
+        let mut rng_b = StdRng::seed_from_u64(99);
+        let output_a = get_gift_circle_with_rng(&people, true, &mut rng_a).unwrap();
+        let output_b = get_gift_circle_with_rng(&people, true, &mut rng_b).unwrap();
+        assert_eq!(output_a.people, output_b.people);
     }
 
     #[test]
